@@ -303,8 +303,8 @@ const MFReceiptList: React.FC = () => {
     setIsSaving(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Total Amount Saved:", totalAmount);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      // console.log("Total Amount Saved:", totalAmount);
       Alert.alert("Success", "Total amount saved successfully.");
     } catch (err) {
       Alert.alert("Error", "Failed to save total amount. Please try again.");
