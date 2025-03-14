@@ -1,7 +1,18 @@
+import { router } from "expo-router";
 import React from "react";
-import { Text, View, ImageBackground, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  Text,
+  View,
+  ImageBackground,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 
 export default function Index() {
+  const redirectToLogin = () => {
+    router.push("/login");
+  };
+
   return (
     <View style={styles.container}>
       <ImageBackground
@@ -13,31 +24,35 @@ export default function Index() {
             <Text style={styles.logo}>FINNET</Text>
             <Text style={styles.logoDigital}>DIGITAL</Text>
           </View>
-          
+
           <View style={styles.contentContainer}>
             <Text style={styles.tagline}>Smart Financial Solutions</Text>
             <Text style={styles.description}>
-              Manage your finances, investments, and payments all in one secure platform.
+              Manage your finances, investments, and payments all in one secure
+              platform.
             </Text>
-            
+
             <View style={styles.featuresContainer}>
               <View style={styles.featureItem}>
                 <View style={styles.featureIcon} />
                 <Text style={styles.featureText}>Secure Transactions</Text>
               </View>
-              
+
               <View style={styles.featureItem}>
                 <View style={styles.featureIcon} />
                 <Text style={styles.featureText}>Investment Tracking</Text>
               </View>
-              
+
               <View style={styles.featureItem}>
                 <View style={styles.featureIcon} />
                 <Text style={styles.featureText}>24/7 Support</Text>
               </View>
             </View>
-            
-            <TouchableOpacity style={styles.getStartedButton}>
+
+            <TouchableOpacity
+              style={styles.getStartedButton}
+              onPress={redirectToLogin}
+            >
               <Text style={styles.getStartedText}>Get Started</Text>
             </TouchableOpacity>
           </View>
