@@ -364,12 +364,7 @@ const MFReceiptList: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <HeaderComponent
-          activeLogBtn={true}
-          title="MF Receipt"
-          onBack={handleBackPress}
-          logOut={logOut}
-        />
+      
 
         {isLoading ? (
           <View style={styles.loadingContainer}>
@@ -477,7 +472,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 14,
     backgroundColor: "white",
     borderBottomColor: "#E0E0E0",

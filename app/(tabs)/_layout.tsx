@@ -1,27 +1,59 @@
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import React from "react";
-import { Platform, Text } from "react-native";
+import { Platform, Text, TouchableOpacity, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function TabLayout() {
+  const router = useRouter();
+
+  // Logout function
+  const handleLogout = async () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Logout",
+          onPress: async () => {
+            // Clear user data from AsyncStorage
+            await AsyncStorage.removeItem("userData");
+            await AsyncStorage.removeItem("userName");
+
+            // Redirect to the login screen
+            router.replace("/");
+          },
+        },
+      ]
+    );
+  };
+
+  // Logout button component
+  const LogoutButton = () => (
+    <TouchableOpacity onPress={handleLogout} style={{ marginRight: 15 }}>
+      <Ionicons name="log-out-outline" size={24} color="white" />
+    </TouchableOpacity>
+  );
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#4D90FE",
-        // headerShown: false,
-
+        tabBarActiveTintColor: "#4D911FE",
         tabBarInactiveTintColor: "gray",
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: "500",
         },
         tabBarStyle: {
-          height: Platform.OS === "ios" ? 69: 90,
+          height: Platform.OS === "ios" ? 69 : 90,
           paddingBottom: Platform.OS === "ios" ? 30 : 10,
           paddingTop: 10,
           backgroundColor: "white",
           borderTopWidth: 1,
-          borderTopColor: "#E0E0E0",
         },
         headerStyle: {
           backgroundColor: "#4D90FE",
@@ -30,6 +62,7 @@ export default function TabLayout() {
         headerTitleStyle: {
           fontWeight: "bold",
         },
+        headerRight: () => <LogoutButton />, // Add logout button to all screens
       }}
     >
       <Tabs.Screen
@@ -42,7 +75,6 @@ export default function TabLayout() {
           headerTitle: "FINNET DIGITAL",
         }}
       />
-
       <Tabs.Screen
         name="receipt"
         options={{
@@ -53,7 +85,6 @@ export default function TabLayout() {
           headerTitle: "Add Receipt",
         }}
       />
-
       <Tabs.Screen
         name="receipt-list"
         options={{

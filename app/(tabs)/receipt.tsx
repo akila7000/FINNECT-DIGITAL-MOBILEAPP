@@ -199,12 +199,7 @@ export default function MFReceipt() {
       { label: "Group 2", value: "grp2" },
       { label: "Group 3", value: "grp3" },
       { label: "Group 4", value: "grp4" },
-      { label: "Group 5", value: "grp5" },
-      { label: "Group 6", value: "grp6" },
-      { label: "Group 7", value: "grp7" },
-      { label: "Group 8", value: "grp8" },
-      { label: "Group 9", value: "grp9" },
-      { label: "Group 10", value: "grp10" },
+   
     ],
     []
   );
@@ -312,12 +307,7 @@ export default function MFReceipt() {
         style={styles.flexGrow}
       >
         <View style={styles.flexGrow}>
-          {/* <HeaderComponet
-            title="MF Receipt"
-            onBack={handleBackPress}
-            logOut={logOut}
-            activeLogBtn={true}
-          /> */}
+       
 
           <ScrollView style={styles.flexGrow}>
             <View style={styles.contentContainer}>
