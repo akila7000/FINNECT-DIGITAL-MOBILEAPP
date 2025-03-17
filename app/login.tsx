@@ -104,7 +104,7 @@ const Login = () => {
           setLoggedUser(fullName);
 
           // Also store the username in AsyncStorage for persistence
-          await AsyncStorage.setItem("userName", fullName);
+          await AsyncStorage.setItem("userData", fullName);
         }
 
         console.log(response, "Response");

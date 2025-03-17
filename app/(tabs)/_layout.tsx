@@ -30,6 +30,11 @@ export default function TabLayout() {
         },
       ]
     );
+    await AsyncStorage.removeItem("userData");
+    await AsyncStorage.removeItem("userName");
+
+    router.replace("/");
+
   };
 
   // Logout button component

@@ -17,27 +17,33 @@ import {
   StyleSheet,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
-// import authUtils from "../utils/authUtils";
-import { useNavigation } from "expo-router";
-
-import { useRouter } from "expo-router";
+import { useNavigation, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-// import HeaderComponet from "@/components/Header";
+import { EXPO_PUBLIC_API_BASE_URL } from "@env";
 
+// Interface for dropdown items
 interface DropdownItem {
   label: string;
   value: string;
 }
 
 export default function MFReceipt() {
-  // State management
-  const [cashierBranch, setCashierBranch] = useState("");
-  const [loanBranch, setLoanBranch] = useState("");
+  // State for dropdown data
+  const [cashierBranches, setCashierBranches] = useState<DropdownItem[]>([]);
+  const [loanBranches, setLoanBranches] = useState<DropdownItem[]>([]);
+  const [centers, setCenters] = useState<DropdownItem[]>([]);
+  const [groups, setGroups] = useState<DropdownItem[]>([]);
+
+  // State for form inputs
   const [center, setCenter] = useState("");
   const [grp, setGroup] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // State for user data
   const [userRole, setUserRole] = useState("");
   const [userId, setUserId] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+
+  // State for errors and API status
   const [errors, setErrors] = useState<{
     center?: string;
     search?: string;
@@ -45,54 +51,150 @@ export default function MFReceipt() {
   }>({});
   const [apiStatus, setApiStatus] = useState("idle");
 
-  // Selected item display text
+  // State for selected item display text
   const [cashierBranchText, setCashierBranchText] = useState("");
   const [loanBranchText, setLoanBranchText] = useState("");
   const [centerText, setCenterText] = useState("");
   const [groupText, setGroupText] = useState("");
 
-  // Current active dropdown
+  // State for dropdown management
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-
-  // Search filters
   const [dropdownSearch, setDropdownSearch] = useState("");
 
+  // Router and navigation
   const router = useRouter();
   const navigation = useNavigation();
 
   // Check if user is logged in
   useEffect(() => {
     const checkAuth = async () => {
-      // const token = await authUtils.getUserToken();
       const userDataSet = await AsyncStorage.getItem("userData");
 
+      console.log(userDataSet);
       if (userDataSet) {
         const userData = JSON.parse(userDataSet);
-        setUserRole(userData.role);
+       
+        console.log(userData.id)
         setUserId(userData.id);
       }
-
-      // if (!token) {
-      //   router.push("/");
-      // }
     };
 
     checkAuth();
   }, []);
 
-  // Simulate API call when center is selected
+  // Fetch cashier branches
   useEffect(() => {
-    if (center) {
-      setApiStatus("loading");
-      setTimeout(() => {
-        setCashierBranch("branch1");
-        setCashierBranchText("Branch 1");
-        setLoanBranch("branchA");
-        setLoanBranchText("Branch A");
-        setApiStatus("success");
-      }, 1000);
-    }
-  }, [center]);
+    const fetchCashierBranches = async () => {
+      try {
+        // Get the auth token or user information
+        const userDataString = await AsyncStorage.getItem("userData");
+        const userData = userDataString ? JSON.parse(userDataString) : null;
+
+        // If no user data or token, handle accordingly
+        if (!userData || !userData.token) {
+          console.error("No authentication token available");
+          return;
+        }
+
+        const response = await fetch(
+          `${EXPO_PUBLIC_API_BASE_URL}/MFReceipt/getCashierBranch`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${userData.token}`, // Add the auth token
+            },
+            body: JSON.stringify({}),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setCashierBranches(
+          data.map((branch: any) => ({ label: branch.name, value: branch.id }))
+        );
+      } catch (error) {
+        console.error("Failed to fetch cashier branches:", error);
+      }
+    };
+
+    fetchCashierBranches();
+  }, []);
+
+  useEffect(() => {
+    const fetchLoanBranches = async () => {
+      try {
+        const response = await fetch(
+          `${EXPO_PUBLIC_API_BASE_URL}/MFReceipt/getLoanBranch`,
+          {
+            method: "POST", // Specify the method as POST
+            headers: {
+              "Content-Type": "application/json", // Set the content type
+            },
+            body: JSON.stringify({}), // Add request body if required
+          }
+        );
+        const data = await response.json();
+        setLoanBranches(
+          data.map((branch: any) => ({ label: branch.name, value: branch.id }))
+        );
+      } catch (error) {
+        console.error("Failed to fetch loan branches:", error);
+      }
+    };
+
+    fetchLoanBranches();
+  }, []);
+
+  useEffect(() => {
+    const fetchCenters = async () => {
+      try {
+        const response = await fetch(
+          `${EXPO_PUBLIC_API_BASE_URL}/MFReceipt/getBranchCenter`,
+          {
+            method: "POST", // Specify the method as POST
+            headers: {
+              "Content-Type": "application/json", // Set the content type
+            },
+            body: JSON.stringify({}), // Add request body if required
+          }
+        );
+        const data = await response.json();
+        setCenters(
+          data.map((center: any) => ({ label: center.name, value: center.id }))
+        );
+      } catch (error) {
+        console.error("Failed to fetch centers:", error);
+      }
+    };
+
+    fetchCenters();
+  }, []);
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const response = await fetch(`${EXPO_PUBLIC_API_BASE_URL}/MFReceipt/`, {
+          method: "POST", // Specify the method as POST
+          headers: {
+            "Content-Type": "application/json", // Set the content type
+          },
+          body: JSON.stringify({}), // Add request body if required
+        });
+        const data = await response.json();
+        setGroups(
+          data.map((group: any) => ({ label: group.name, value: group.id }))
+        );
+      } catch (error) {
+        console.error("Failed to fetch groups:", error);
+      }
+    };
+
+    fetchGroups();
+  }, []);
 
   // Handle form submission
   const handleSubmit = () => {
@@ -104,9 +206,6 @@ export default function MFReceipt() {
     if (!grp) {
       newErrors.grp = "Please select a group";
     }
-    // if (!searchQuery.trim()) {
-    //   newErrors.search = "Please enter a username or ID";
-    // }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -119,8 +218,6 @@ export default function MFReceipt() {
     // Simulate API call
     setTimeout(() => {
       const receiptData = {
-        cashierBranch,
-        loanBranch,
         center,
         searchQuery,
       };
@@ -135,74 +232,6 @@ export default function MFReceipt() {
       });
     }, 1500);
   };
-
-  // Handle back button
-  // const handleBackPress = () => {
-  //   Alert.alert("Confirm", "Are you sure you want to go back?", [
-  //     { text: "Cancel", style: "cancel" },
-  //     {
-  //       text: "Yes",
-  //       onPress: () => {
-  //         if (router.canGoBack()) {
-  //           navigation.goBack();
-  //         } else {
-  //           router.replace("/"); // Redirect to a default route
-  //         }
-  //       },
-  //     },
-  //   ]);
-  // };
-
-  // const logOut = async () => {
-  //   Alert.alert("Confirm", "Are you sure you want to log out?", [
-  //     { text: "Cancel", style: "cancel" },
-  //     {
-  //       text: "Yes",
-  //       onPress: async () => {
-  //         // await authUtils.removeUserToken();
-  //         router.replace("/");
-  //       },
-  //     },
-  //   ]);
-  // };
-
-  // Dropdown data
-  const cashierBranches = useMemo<DropdownItem[]>(
-    () => [
-      { label: "Branch 1", value: "branch1" },
-      { label: "Branch 2", value: "branch2" },
-    ],
-    []
-  );
-
-  const loanBranches = useMemo<DropdownItem[]>(
-    () => [
-      { label: "Branch A", value: "branchA" },
-      { label: "Branch B", value: "branchB" },
-    ],
-    []
-  );
-
-  const centers = useMemo<DropdownItem[]>(
-    () => [
-      { label: "Center 1", value: "center1" },
-      { label: "Center 2", value: "center2" },
-      { label: "Center 3", value: "center3" },
-      { label: "Center 4", value: "center4" },
-    ],
-    []
-  );
-
-  const groups = useMemo<DropdownItem[]>(
-    () => [
-      { label: "Group 1", value: "grp1" },
-      { label: "Group 2", value: "grp2" },
-      { label: "Group 3", value: "grp3" },
-      { label: "Group 4", value: "grp4" },
-   
-    ],
-    []
-  );
 
   // Get dropdown items based on active dropdown
   const getDropdownItems = (): DropdownItem[] => {
@@ -234,11 +263,9 @@ export default function MFReceipt() {
   const handleSelectItem = (item: DropdownItem) => {
     switch (activeDropdown) {
       case "cashier":
-        setCashierBranch(item.value);
         setCashierBranchText(item.label);
         break;
       case "loan":
-        setLoanBranch(item.value);
         setLoanBranchText(item.label);
         break;
       case "center":
@@ -307,8 +334,6 @@ export default function MFReceipt() {
         style={styles.flexGrow}
       >
         <View style={styles.flexGrow}>
-       
-
           <ScrollView style={styles.flexGrow}>
             <View style={styles.contentContainer}>
               <View style={styles.infoBox}>
@@ -326,14 +351,12 @@ export default function MFReceipt() {
                 cashierBranchText,
                 "cashier"
               )}
-
               {renderSelectField(
                 "Select Loan Branch",
                 "Search for loan branch",
                 loanBranchText,
                 "loan"
               )}
-
               {renderSelectField(
                 "Select Center",
                 "Search for center",
@@ -341,7 +364,6 @@ export default function MFReceipt() {
                 "center",
                 errors.center
               )}
-
               {renderSelectField(
                 "Select Group",
                 "Search for group",
@@ -367,9 +389,8 @@ export default function MFReceipt() {
                     value={searchQuery}
                     onChangeText={(text) => {
                       setSearchQuery(text);
-                      if (errors.search) {
+                      if (errors.search)
                         setErrors({ ...errors, search: undefined });
-                      }
                     }}
                     editable={apiStatus !== "loading"}
                   />
@@ -482,22 +503,14 @@ export default function MFReceipt() {
   );
 }
 
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop:30,
+    paddingTop: 30,
     backgroundColor: "#ffffff",
   },
   flexGrow: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  mainContainer: {
-    flex: 1,
-  },
-  scrollView: {
     flex: 1,
   },
   contentContainer: {
@@ -543,18 +556,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 1,
   },
-  searchIconContainer: {
-    position: "absolute",
-    top: 0,
-    left: 12,
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1,
-  },
-  searchInputContainer: {
-    position: "relative",
-  },
   selectText: {
     paddingVertical: 12,
     paddingLeft: 40,
@@ -574,10 +575,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
   },
-  searchContainer: {
-    marginBottom: 24,
-  },
-  inputWrapper: {
+  searchInputContainer: {
     position: "relative",
   },
   searchInput: {
@@ -608,9 +606,6 @@ const styles = StyleSheet.create({
   activeButton: {
     backgroundColor: "#2563EB",
   },
-  disabledButton: {
-    backgroundColor: "#93C5FD",
-  },
   buttonText: {
     color: "#FFFFFF",
     fontWeight: "bold",
@@ -620,15 +615,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: {
-    marginLeft: 8,
-  },
-  loadingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  buttonTextLoading: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
     marginLeft: 8,
   },
   modalOverlay: {
