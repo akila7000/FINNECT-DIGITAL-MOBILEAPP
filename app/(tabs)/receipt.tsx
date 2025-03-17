@@ -104,9 +104,9 @@ export default function MFReceipt() {
     if (!grp) {
       newErrors.grp = "Please select a group";
     }
-    if (!searchQuery.trim()) {
-      newErrors.search = "Please enter a username or ID";
-    }
+    // if (!searchQuery.trim()) {
+    //   newErrors.search = "Please enter a username or ID";
+    // }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -137,34 +137,34 @@ export default function MFReceipt() {
   };
 
   // Handle back button
-  const handleBackPress = () => {
-    Alert.alert("Confirm", "Are you sure you want to go back?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Yes",
-        onPress: () => {
-          if (router.canGoBack()) {
-            navigation.goBack();
-          } else {
-            router.replace("/"); // Redirect to a default route
-          }
-        },
-      },
-    ]);
-  };
+  // const handleBackPress = () => {
+  //   Alert.alert("Confirm", "Are you sure you want to go back?", [
+  //     { text: "Cancel", style: "cancel" },
+  //     {
+  //       text: "Yes",
+  //       onPress: () => {
+  //         if (router.canGoBack()) {
+  //           navigation.goBack();
+  //         } else {
+  //           router.replace("/"); // Redirect to a default route
+  //         }
+  //       },
+  //     },
+  //   ]);
+  // };
 
-  const logOut = async () => {
-    Alert.alert("Confirm", "Are you sure you want to log out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Yes",
-        onPress: async () => {
-          // await authUtils.removeUserToken();
-          router.replace("/");
-        },
-      },
-    ]);
-  };
+  // const logOut = async () => {
+  //   Alert.alert("Confirm", "Are you sure you want to log out?", [
+  //     { text: "Cancel", style: "cancel" },
+  //     {
+  //       text: "Yes",
+  //       onPress: async () => {
+  //         // await authUtils.removeUserToken();
+  //         router.replace("/");
+  //       },
+  //     },
+  //   ]);
+  // };
 
   // Dropdown data
   const cashierBranches = useMemo<DropdownItem[]>(
