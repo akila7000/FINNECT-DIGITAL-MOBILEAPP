@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -43,6 +43,10 @@ export default function MFReceipt() {
   const [userRole, setUserRole] = useState("");
   const [userId, setUserId] = useState("");
 
+  // State for loading indicators
+  const [isLoadingCashierBranches, setIsLoadingCashierBranches] =
+    useState(false);
+
   // State for errors and API status
   const [errors, setErrors] = useState<{
     center?: string;
@@ -73,7 +77,6 @@ export default function MFReceipt() {
       console.log(userDataSet); // working
       if (userDataSet) {
         const userData = JSON.parse(userDataSet);
-
         setUserId(userData.id);
       }
     };
@@ -81,78 +84,13 @@ export default function MFReceipt() {
     checkAuth();
   }, []);
 
-
-
-  const checkAuthentication = async () => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
-
-    try {
-      const response = await fetch(
-        `${EXPO_PUBLIC_API_BASE_URL}/auth/isAuthenticated`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include", // ✅ Ensures session cookies are sent
-          signal: controller.signal,
-        }
-      );
-
-      console.log(response);
-      clearTimeout(timeoutId); // ✅ Clear timeout once response is received
-
-      console.log("Response Headers:", response.headers); // ✅ Log headers
-
-      const data = await response.json(); // ✅ Parse response JSON
-      console.log("Response Data:", data);
-
-      if (response.ok) {
-        console.log("✅ User is authenticated:", data);
-        return true; // ✅ User is authenticated
-      } else {
-        console.error("❌ Authentication failed:", data);
-        return false; // ❌ User is not authenticated
-      }
-    } catch (error) {
-      if (error) {
-        console.error("❌ Request timed out");
-      } else {
-        console.error("❌ Network or server error:", error);
-      }
-      return false; // ❌ Error occurred, assume not authenticated
-    }
-  };
-
-  // ✅ Use the function in useEffect
-  useEffect(() => {
-    checkAuthentication().then((isAuthenticated) => {
-      if (isAuthenticated) {
-        console.log("🎉 User is logged in!");
-      } else {
-        console.log("🚫 Redirecting to login...");
-        // You can redirect to login here
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    checkAuthentication();
-  }, []);
-
   // Fetch cashier branches
   useEffect(() => {
     const fetchCashierBranches = async () => {
+
+      
+      setIsLoadingCashierBranches(true);
       try {
-        // Get the auth token or user information
-        const userDataString = await AsyncStorage.getItem("userData");
-        const userData = userDataString ? JSON.parse(userDataString) : null;
-
-        // If no user data or token, handle accordingly
-        if (!userData || !userData.token) {
-          console.error("No authentication token available");
-          return;
-        }
-
         const response = await fetch(
           `${EXPO_PUBLIC_API_BASE_URL}/MFReceipt/getCashierBranch`,
           {
@@ -169,20 +107,38 @@ export default function MFReceipt() {
         }
 
         const data = await response.json();
-        setCashierBranches(
-          data.map((branch: any) => ({ label: branch.name, value: branch.id }))
-        );
+        console.log("Fetched Cashier Branches Data:", data);
+
+        // Validate and map the data
+        const mappedBranches = data
+          .filter((branch: any) => branch.Description) // Ensure description exists
+          .map((branch: any) => ({
+            label: branch.Description || "Unnamed Branch", // Provide a default value
+            value: branch.BranchId,
+          }));
+
+        setCashierBranches(mappedBranches);
       } catch (error) {
         console.error("Failed to fetch cashier branches:", error);
+        Alert.alert(
+          "Error",
+          "Failed to fetch cashier branches. Please try again."
+        );
+      } finally {
+        setIsLoadingCashierBranches(false);
       }
     };
 
     fetchCashierBranches();
-  }, []);
 
+
+  }, []); // Remove cashierBranches from dependency array to prevent infinite loop
+
+  // loan branches
   useEffect(() => {
     const fetchLoanBranches = async () => {
       try {
+        // Make a POST request to the API endpoint
         const response = await fetch(
           `${EXPO_PUBLIC_API_BASE_URL}/MFReceipt/getLoanBranch`,
           {
@@ -193,15 +149,30 @@ export default function MFReceipt() {
             body: JSON.stringify({}), // Add request body if required
           }
         );
+
+        // Check if the response is successful
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        // Parse the response body as JSON
         const data = await response.json();
-        setLoanBranches(
-          data.map((branch: any) => ({ label: branch.name, value: branch.id }))
-        );
+        console.log("Fetched Loan Branches Data:", data); // Log the data for debugging
+
+        // Map the data to the desired format
+        const mappedBranches = data.map((branch) => ({
+          label: branch.Description,
+          value: branch.BranchId,
+        }));
+
+        // Update state with the mapped data
+        setLoanBranches(mappedBranches);
       } catch (error) {
-        console.error("Failed to fetch loan branches:", error);
+        console.error("Failed to fetch loan branches:", error); // Log any errors
       }
     };
 
+    // Call the fetch function
     fetchLoanBranches();
   }, []);
 
@@ -219,8 +190,12 @@ export default function MFReceipt() {
           }
         );
         const data = await response.json();
+        console.log(data);
         setCenters(
-          data.map((center: any) => ({ label: center.name, value: center.id }))
+          data.map((center: any) => ({
+            label: center.description,
+            value: center.branchId,
+          }))
         );
       } catch (error) {
         console.error("Failed to fetch centers:", error);
@@ -228,28 +203,6 @@ export default function MFReceipt() {
     };
 
     fetchCenters();
-  }, []);
-
-  useEffect(() => {
-    const fetchGroups = async () => {
-      try {
-        const response = await fetch(`${EXPO_PUBLIC_API_BASE_URL}/MFReceipt/`, {
-          method: "POST", // Specify the method as POST
-          headers: {
-            "Content-Type": "application/json", // Set the content type
-          },
-          body: JSON.stringify({}), // Add request body if required
-        });
-        const data = await response.json();
-        setGroups(
-          data.map((group: any) => ({ label: group.name, value: group.id }))
-        );
-      } catch (error) {
-        console.error("Failed to fetch groups:", error);
-      }
-    };
-
-    fetchGroups();
   }, []);
 
   // Handle form submission
@@ -358,7 +311,8 @@ export default function MFReceipt() {
     placeholder: string,
     value: string,
     type: string,
-    error?: string
+    error?: string,
+    isLoading: boolean = false
   ) => {
     return (
       <View style={styles.fieldContainer}>
@@ -367,14 +321,19 @@ export default function MFReceipt() {
           onPress={() => openDropdown(type)}
           style={[styles.selectField, error ? styles.errorField : null]}
           activeOpacity={0.7}
+          disabled={isLoading}
         >
           <View style={styles.searchIcon}>
-            <FontAwesome name="search" size={18} color="#4B5563" />
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#4B5563" />
+            ) : (
+              <FontAwesome name="search" size={18} color="#4B5563" />
+            )}
           </View>
           <Text
             style={[styles.selectText, !value ? styles.placeholderText : null]}
           >
-            {value || placeholder}
+            {isLoading ? "Loading..." : value || placeholder}
           </Text>
         </TouchableOpacity>
         {error && <Text style={styles.errorText}>{error}</Text>}
@@ -405,7 +364,9 @@ export default function MFReceipt() {
                 "Select Cashier Branch",
                 "Search for cashier branch",
                 cashierBranchText,
-                "cashier"
+                "cashier",
+                undefined,
+                isLoadingCashierBranches
               )}
               {renderSelectField(
                 "Select Loan Branch",

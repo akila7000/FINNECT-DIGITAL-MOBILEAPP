@@ -67,140 +67,12 @@ const Login = () => {
   };
 
   // Handle login with proper API integration
-  // const handleLogin = async () => {
-  //   // Reset previous errors
-  //   setErrorMessage("");
-
-  //   // Validate inputs
-  //   if (!validateInputs()) {
-  //     return;
-  //   }
-
-  //   try {
-  //     // Set loading state
-  //     setApiStatus("loading");
-
-  //     // Make API request with timeout for better error handling
-  //     const controller = new AbortController();
-  //     // const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
-
-  //     const response = await fetch(`${EXPO_PUBLIC_API_BASE_URL}/auth/login`, {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ username, password }),
-  //       credentials: "include", // Ensures cookies are included (only works with fetch in browsers)
-  //       // signal: controller.signal, // Attach the AbortController signal
-  //     });
-
-  //     // clearTimeout(timeoutId); // Clear timeout after response is received
-
-  //     const data = await response.json(); // Parse response after clearing timeout
-
-  //     console.log(data); //
-  //     if (response.ok) {
-  //       // Check if the server returned valid user data
-  //       if (Array.isArray(data) && data.length > 0) {
-  //         const user = data[0]; // Get the first item in the array
-  //         const fullName = user.FullName; // "Test Login"
-  //         console.log("User Full Name:", fullName);
-  //         setLoggedUser(fullName);
-
-  //         // Extract the session cookie from the response headers
-  //         const headers = response.headers;
-  //         const setCookie = headers.get("set-cookie"); // Extract the session cookie
-
-  //         if (setCookie) {
-  //           // Store the session cookie in AsyncStorage
-  //           await AsyncStorage.setItem("sessionCookie", setCookie);
-  //         }
-
-  //         // Also store the username in AsyncStorage for persistence
-  //         await AsyncStorage.setItem("userData", fullName);
-  //       }
-
-  //       console.log(response, "Response");
-  //       if (data) {
-  //         // Store user session
-  //         await AsyncStorage.setItem("userData", JSON.stringify(data));
-
-  //         // Update status
-  //         setApiStatus("success");
-  //         // Clear any existing errors
-  //         setErrorMessage("");
-  //         // Navigate to the protected page after successful login
-  //         router.push("/receipt");
-  //       } else {
-  //         console.log("Error", response);
-  //         // Handle invalid user data format
-  //         setApiStatus("error");
-  //         setErrorMessage("Invalid Credentials!");
-  //         Alert.alert("Login Failed", "Invalid Credentials!");
-  //       }
-  //     } else {
-  //       // Handle different error status codes
-  //       setApiStatus("error");
-  //       if (response.status === 401) {
-  //         setErrorMessage("Invalid username or password");
-  //         Alert.alert("Login Failed", "Invalid username or password");
-  //       } else if (response.status === 403) {
-  //         setErrorMessage("Your account is locked. Please contact support.");
-  //         Alert.alert(
-  //           "Account Locked",
-  //           "Your account is locked. Please contact support."
-  //         );
-  //       } else if (response.status >= 500) {
-  //         setErrorMessage("Server error. Please try again later.");
-  //         Alert.alert(
-  //           "Server Error",
-  //           "Server is currently unavailable. Please try again later."
-  //         );
-  //       } else {
-  //         // Generic error message for other status codes
-  //         setErrorMessage(data?.message || "Login failed");
-  //         Alert.alert("Login Failed", data?.message || "Something went wrong");
-  //       }
-  //     }
-  //   } catch (error) {
-  //     // Set error state
-  //     setApiStatus("error");
-  //     // Alert.alert("Network failed to connect");
-  //     console.log(error, "Error");
-  //     // Handle different error types
-  //     //   if (
-  //     //     error instanceof TypeError &&
-  //     //     error.message.includes("Network request failed")
-  //     //   ) {
-  //     //     setNetworkAvailable(false);
-  //     //     setErrorMessage(
-  //     //       "Network error. Please check your internet connection."
-  //     //     );
-  //     //     Alert.alert(
-  //     //       "Network Error",
-  //     //       "Please check your internet connection and try again."
-  //     //     );
-  //     //   } else if (error instanceof DOMException && error.name === "AbortError") {
-  //     //     setErrorMessage("Request timed out. Please try again.");
-  //     //     Alert.alert("Timeout", "Request timed out. Please try again.");
-  //     //   } else {
-  //     //     setErrorMessage("An unexpected error occurred. Please try again!");
-  //     //     Alert.alert("Error", "An unexpected error occurred. Please try again.");
-  //     //   }
-  //     // } finally {
-  //     //   // Always clean up loading state
-  //     //   if (apiStatus === "loading") {
-  //     //     setApiStatus("idle");
-  //     //   }
-  //   }
-  // };
-
   const handleLogin = async () => {
     // Reset previous errors
     setErrorMessage("");
-    setNetworkAvailable(true);
 
     // Validate inputs
-    if (!username.trim() || !password.trim()) {
-      setErrorMessage("Username and password are required");
+    if (!validateInputs()) {
       return;
     }
 
@@ -208,117 +80,116 @@ const Login = () => {
       // Set loading state
       setApiStatus("loading");
 
-      // Set up request timeout
+      // Make API request with timeout for better error handling
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      // const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
 
-      // Make API request
       const response = await fetch(`${EXPO_PUBLIC_API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
-        credentials: "include", // ✅ Ensures session cookies are sent
-        signal: controller.signal, // ✅ Attach the AbortController signal
+        credentials: "include", // Ensures cookies are included (only works with fetch in browsers)
+        // signal: controller.signal, // Attach the AbortController signal
       });
 
-      // Clear timeout after response is received
-      clearTimeout(timeoutId);
+      // clearTimeout(timeoutId); // Clear timeout after response is received
 
-      console.log("Response status:", response.status);
+      const data = await response.json(); // Parse response after clearing timeout
 
-      // Fetch and log headers
-      const headers = {};
-      response.headers.forEach((value, key) => {
-        headers[key] = value;
-      });
-      console.log("Response headers:", headers);
+      console.log(data); //
+      if (response.ok) {
+        // Check if the server returned valid user data
+        if (Array.isArray(data) && data.length > 0) {
+          const user = data[0]; // Get the first item in the array
+          const fullName = user.FullName; // "Test Login"
+          console.log("User Full Name:", fullName);
+          setLoggedUser(fullName);
 
-      // Handle error responses
-      if (!response.ok) {
-        let errorMessage = "Login failed";
-        if (response.status === 401)
-          errorMessage = "Invalid username or password";
-        else if (response.status === 403)
-          errorMessage = "Your account is locked. Please contact support.";
-        else if (response.status >= 500)
-          errorMessage = "Server error. Please try again later.";
+          // Extract the session cookie from the response headers
+          const headers = response.headers;
+          const setCookie = headers.get("set-cookie"); // Extract the session cookie
 
-        setApiStatus("error");
-        setErrorMessage(errorMessage);
-        Alert.alert("Login Failed", errorMessage);
-        return;
-      }
+          if (setCookie) {
+            // Store the session cookie in AsyncStorage
+            await AsyncStorage.setItem("sessionCookie", setCookie);
+          }
 
-      // ✅ Ensure response is parsed properly
-      const data = await response.json();
-      console.log("Response data:", data);
+          // Also store the username in AsyncStorage for persistence
+          await AsyncStorage.setItem("userData", fullName);
+        }
 
-      if (!data) throw new Error("Empty response data");
+        console.log(response, "Response");
+        if (data) {
+          // Store user session
+          await AsyncStorage.setItem("userData", JSON.stringify(data));
 
-      // Extract user information and token
-      const userData = Array.isArray(data) && data.length > 0 ? data[0] : data;
-      const authToken = data.token || headers["x-auth-token"];
-
-      // ✅ Store auth token if available
-      if (authToken) {
-        await AsyncStorage.setItem("authToken", authToken);
-        console.log("Auth token stored");
-      }
-
-      // 🛑 React Native does NOT support automatic cookies, so manually handle session
-      if (headers["set-cookie"]) {
-        console.warn(
-          "⚠️ React Native does not support automatic cookies. Implement a manual session solution."
-        );
-      }
-
-      // ✅ Store user data
-      await AsyncStorage.setItem(
-        "userData",
-        JSON.stringify({ ...userData, token: authToken })
-      );
-      console.log("User data stored");
-
-      // ✅ Login successful
-      setApiStatus("success");
-      setErrorMessage("");
-
-      // ✅ Set user in context/state
-      if (userData.FullName) {
-        setLoggedUser(userData.FullName);
-      }
-
-      // ✅ Navigate to main screen
-      router.push("/receipt");
-    } catch (error) {
-      setApiStatus("error");
-      console.error("Login error:", error);
-
-      // Handle different error types
-      if (error.name === "AbortError") {
-        setErrorMessage("Request timed out. Please try again.");
-        Alert.alert("Timeout", "Request timed out. Please try again.");
-      } else if (error.message.includes("Network request failed")) {
-        setNetworkAvailable(false);
-        setErrorMessage(
-          "Network error. Please check your internet connection."
-        );
-        Alert.alert(
-          "Network Error",
-          "Please check your internet connection and try again."
-        );
+          // Update status
+          setApiStatus("success");
+          // Clear any existing errors
+          setErrorMessage("");
+          // Navigate to the protected page after successful login
+          router.push("/receipt");
+        } else {
+          console.log("Error", response);
+          // Handle invalid user data format
+          setApiStatus("error");
+          setErrorMessage("Invalid Credentials!");
+          Alert.alert("Login Failed", "Invalid Credentials!");
+        }
       } else {
-        setErrorMessage(error.message);
-        Alert.alert("Error", "An unexpected error occurred. Please try again.");
-        console.log(
-          "Error",
-          "An unexpected error occurred. Please try again.",
-          error
-        );
+        // Handle different error status codes
+        setApiStatus("error");
+        if (response.status === 401) {
+          setErrorMessage("Invalid username or password");
+          Alert.alert("Login Failed", "Invalid username or password");
+        } else if (response.status === 403) {
+          setErrorMessage("Your account is locked. Please contact support.");
+          Alert.alert(
+            "Account Locked",
+            "Your account is locked. Please contact support."
+          );
+        } else if (response.status >= 500) {
+          setErrorMessage("Server error. Please try again later.");
+          Alert.alert(
+            "Server Error",
+            "Server is currently unavailable. Please try again later."
+          );
+        } else {
+          // Generic error message for other status codes
+          setErrorMessage(data?.message || "Login failed");
+          Alert.alert("Login Failed", data?.message || "Something went wrong");
+        }
       }
-    } finally {
-      // ✅ Always clean up loading state
-      setApiStatus("idle");
+    } catch (error) {
+      // Set error state
+      setApiStatus("error");
+      // Alert.alert("Network failed to connect");
+      console.log(error, "Error");
+      // Handle different error types
+      //   if (
+      //     error instanceof TypeError &&
+      //     error.message.includes("Network request failed")
+      //   ) {
+      //     setNetworkAvailable(false);
+      //     setErrorMessage(
+      //       "Network error. Please check your internet connection."
+      //     );
+      //     Alert.alert(
+      //       "Network Error",
+      //       "Please check your internet connection and try again."
+      //     );
+      //   } else if (error instanceof DOMException && error.name === "AbortError") {
+      //     setErrorMessage("Request timed out. Please try again.");
+      //     Alert.alert("Timeout", "Request timed out. Please try again.");
+      //   } else {
+      //     setErrorMessage("An unexpected error occurred. Please try again!");
+      //     Alert.alert("Error", "An unexpected error occurred. Please try again.");
+      //   }
+      // } finally {
+      //   // Always clean up loading state
+      //   if (apiStatus === "loading") {
+      //     setApiStatus("idle");
+      //   }
     }
   };
 
