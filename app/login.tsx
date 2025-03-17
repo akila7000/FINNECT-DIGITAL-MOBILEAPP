@@ -82,19 +82,21 @@ const Login = () => {
 
       // Make API request with timeout for better error handling
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+      // const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
 
       const response = await fetch(`${EXPO_PUBLIC_API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
-        signal: controller.signal, // This is important for the timeout to work
+        credentials: "include", // Ensures cookies are included (only works with fetch in browsers)
+        // signal: controller.signal, // Attach the AbortController signal
       });
 
-      clearTimeout(timeoutId); // Clear timeout after response is received
+      // clearTimeout(timeoutId); // Clear timeout after response is received
 
       const data = await response.json(); // Parse response after clearing timeout
 
+      console.log(data); //
       if (response.ok) {
         // Check if the server returned valid user data
         if (Array.isArray(data) && data.length > 0) {
@@ -102,6 +104,15 @@ const Login = () => {
           const fullName = user.FullName; // "Test Login"
           console.log("User Full Name:", fullName);
           setLoggedUser(fullName);
+
+          // Extract the session cookie from the response headers
+          const headers = response.headers;
+          const setCookie = headers.get("set-cookie"); // Extract the session cookie
+
+          if (setCookie) {
+            // Store the session cookie in AsyncStorage
+            await AsyncStorage.setItem("sessionCookie", setCookie);
+          }
 
           // Also store the username in AsyncStorage for persistence
           await AsyncStorage.setItem("userData", fullName);
@@ -152,32 +163,33 @@ const Login = () => {
     } catch (error) {
       // Set error state
       setApiStatus("error");
-
+      // Alert.alert("Network failed to connect");
+      console.log(error, "Error");
       // Handle different error types
-      if (
-        error instanceof TypeError &&
-        error.message.includes("Network request failed")
-      ) {
-        setNetworkAvailable(false);
-        setErrorMessage(
-          "Network error. Please check your internet connection."
-        );
-        Alert.alert(
-          "Network Error",
-          "Please check your internet connection and try again."
-        );
-      } else if (error instanceof DOMException && error.name === "AbortError") {
-        setErrorMessage("Request timed out. Please try again.");
-        Alert.alert("Timeout", "Request timed out. Please try again.");
-      } else {
-        setErrorMessage("An unexpected error occurred. Please try again!");
-        Alert.alert("Error", "An unexpected error occurred. Please try again.");
-      }
-    } finally {
-      // Always clean up loading state
-      if (apiStatus === "loading") {
-        setApiStatus("idle");
-      }
+      //   if (
+      //     error instanceof TypeError &&
+      //     error.message.includes("Network request failed")
+      //   ) {
+      //     setNetworkAvailable(false);
+      //     setErrorMessage(
+      //       "Network error. Please check your internet connection."
+      //     );
+      //     Alert.alert(
+      //       "Network Error",
+      //       "Please check your internet connection and try again."
+      //     );
+      //   } else if (error instanceof DOMException && error.name === "AbortError") {
+      //     setErrorMessage("Request timed out. Please try again.");
+      //     Alert.alert("Timeout", "Request timed out. Please try again.");
+      //   } else {
+      //     setErrorMessage("An unexpected error occurred. Please try again!");
+      //     Alert.alert("Error", "An unexpected error occurred. Please try again.");
+      //   }
+      // } finally {
+      //   // Always clean up loading state
+      //   if (apiStatus === "loading") {
+      //     setApiStatus("idle");
+      //   }
     }
   };
   // Handle retry when network is unavailable
@@ -217,7 +229,7 @@ const Login = () => {
         <View style={styles.content}>
           <View style={styles.header}>
             <Image
-              source={require("../assets/images/pcsLogo.jpeg")}
+              source={require("../assets/images/icon.png")}
               style={styles.logo}
               resizeMode="contain"
             />
@@ -306,7 +318,7 @@ const Login = () => {
                   style={styles.eyeIcon}
                 >
                   {showPassword ? (
-                    <Entypo name="eye" size={20} color="#9CA3AF" />
+                    <Entypo name="eye" size={18} color="#9CA3AF" />
                   ) : (
                     <Entypo name="eye-with-line" size={20} color="#9CA3AF" />
                   )}
@@ -317,12 +329,12 @@ const Login = () => {
               )}
             </View>
 
-             <TouchableOpacity
+            <TouchableOpacity
               style={styles.forgotPassword}
               onPress={handleForgotPassword}
             >
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-            </TouchableOpacity> 
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity
@@ -347,7 +359,7 @@ const Login = () => {
                 />
               </>
             )}
-          </TouchableOpacity> 
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -373,7 +385,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     width: 150,
-    height: 50,
+    height: 150,
     marginBottom: 20,
   },
   welcomeText: {
@@ -459,7 +471,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   eyeIcon: {
-    padding: 8,
+    padding: 1,
   },
   errorMessage: {
     color: "#EF4444",

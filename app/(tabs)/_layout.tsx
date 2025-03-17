@@ -3,6 +3,7 @@ import React from "react";
 import { Platform, Text, TouchableOpacity, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { EXPO_PUBLIC_API_BASE_URL } from "@env";
 
 export default function TabLayout() {
   const router = useRouter();
@@ -20,21 +21,41 @@ export default function TabLayout() {
         {
           text: "Logout",
           onPress: async () => {
-            // Clear user data from AsyncStorage
-            await AsyncStorage.removeItem("userData");
-            await AsyncStorage.removeItem("userName");
+            try {
+              // Create an AbortController for timeout handling
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 5000); // 5-second timeout
 
-            // Redirect to the login screen
-            router.replace("/");
+              // Call the logout API
+              const response = await fetch(`${EXPO_PUBLIC_API_BASE_URL}/auth/logout`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({}),
+                credentials: "include", // Ensures cookies (session) are sent
+                signal: controller.signal, // Timeout handling
+              });
+
+              // Clear the timeout
+              clearTimeout(timeoutId);
+
+              if (!response.ok) {
+                throw new Error("Logout failed");
+              }
+
+              // Clear user data from AsyncStorage
+              await AsyncStorage.removeItem("userData");
+              await AsyncStorage.removeItem("userName");
+
+              // Redirect to the login screen
+              router.replace("/");
+            } catch (error) {
+              console.error("Logout error:", error);
+              Alert.alert("Error", "Failed to logout. Please try again.");
+            }
           },
         },
       ]
     );
-    await AsyncStorage.removeItem("userData");
-    await AsyncStorage.removeItem("userName");
-
-    router.replace("/");
-
   };
 
   // Logout button component

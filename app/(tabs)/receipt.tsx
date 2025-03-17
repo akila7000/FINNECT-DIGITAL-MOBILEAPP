@@ -70,16 +70,110 @@ export default function MFReceipt() {
     const checkAuth = async () => {
       const userDataSet = await AsyncStorage.getItem("userData");
 
-      console.log(userDataSet);
+      console.log(userDataSet); // working
       if (userDataSet) {
         const userData = JSON.parse(userDataSet);
-       
-        console.log(userData.id)
+
         setUserId(userData.id);
       }
     };
 
     checkAuth();
+  }, []);
+
+  const checkAuthentication = async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+
+    try {
+      const response = await fetch(
+        `${EXPO_PUBLIC_API_BASE_URL}/auth/isAuthenticated`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+          credentials: "include", // ✅ Ensures cookies (session) are sent
+          signal: controller.signal, // ✅ Timeout handling
+        }
+      );
+
+      console.log(response);
+
+      clearTimeout(timeoutId); // ✅ Clear timeout once response is received
+
+      const data = await response.json(); // ✅ Parse response JSON
+      console.log(data);
+
+      if (response.ok) {
+        console.log("User is authenticated:", data);
+        // Handle success logic here
+      } else {
+        console.error("Authentication failed:", data);
+        // Handle failure (e.g., redirect to login)
+      }
+    } catch (error) {
+      if (error.name === "AbortError") {
+        console.error("Request timed out");
+      } else {
+        console.error("Network or server error:", error);
+      }
+    }
+  };
+
+  // const checkAuthentication = async () => {
+  //   const controller = new AbortController();
+  //   const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+
+  //   try {
+  //     const response = await fetch(
+  //       `${EXPO_PUBLIC_API_BASE_URL}/auth/isAuthenticated`,
+  //       {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         credentials: "include", // ✅ Ensures session cookies are sent
+  //         signal: controller.signal,
+  //       }
+  //     );
+
+  //     console.log(response);
+  //     clearTimeout(timeoutId); // ✅ Clear timeout once response is received
+
+  //     console.log("Response Headers:", response.headers); // ✅ Log headers
+
+  //     const data = await response.json(); // ✅ Parse response JSON
+  //     console.log("Response Data:", data);
+
+  //     if (response.ok) {
+  //       console.log("✅ User is authenticated:", data);
+  //       return true; // ✅ User is authenticated
+  //     } else {
+  //       console.error("❌ Authentication failed:", data);
+  //       return false; // ❌ User is not authenticated
+  //     }
+  //   } catch (error) {
+  //     if (error) {
+  //       console.error("❌ Request timed out");
+  //     } else {
+  //       console.error("❌ Network or server error:", error);
+  //     }
+  //     return false; // ❌ Error occurred, assume not authenticated
+  //   }
+  // };
+
+  // ✅ Use the function in useEffect
+  useEffect(() => {
+    checkAuthentication().then((isAuthenticated) => {
+      if (isAuthenticated) {
+        console.log("🎉 User is logged in!");
+      } else {
+        console.log("🚫 Redirecting to login...");
+        // You can redirect to login here
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    checkAuthentication();
   }, []);
 
   // Fetch cashier branches
@@ -102,7 +196,6 @@ export default function MFReceipt() {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${userData.token}`, // Add the auth token
             },
             body: JSON.stringify({}),
           }
