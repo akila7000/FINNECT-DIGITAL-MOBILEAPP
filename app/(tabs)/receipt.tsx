@@ -19,7 +19,7 @@ import {
 import { FontAwesome } from "@expo/vector-icons";
 import { useNavigation, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { EXPO_PUBLIC_API_BASE_URL } from "@env";
+
 
 // Interface for dropdown items
 interface DropdownItem {
@@ -94,7 +94,7 @@ export default function MFReceipt() {
       setIsLoadingCashierBranches(true);
       try {
         const response = await fetch(
-          `${EXPO_PUBLIC_API_BASE_URL}/MFReceipt/getCashierBranch`,
+          `http://192.168.8.104:5235/MFReceipt/getCashierBranch`,
           {
             method: "POST",
             headers: {
@@ -139,7 +139,7 @@ export default function MFReceipt() {
       try {
         // Make a POST request to the API endpoint
         const response = await fetch(
-          `${EXPO_PUBLIC_API_BASE_URL}/MFReceipt/getLoanBranch`,
+          `http://192.168.8.104:5235/MFReceipt/getLoanBranch`,
           {
             method: "POST", // Specify the method as POST
             headers: {
@@ -180,7 +180,7 @@ export default function MFReceipt() {
   const fetchCenters = async (branchId: string) => {
     try {
       const response = await fetch(
-        `${EXPO_PUBLIC_API_BASE_URL}/MFReceipt/getBranchCenter`,
+        `http://192.168.8.104:5235/MFReceipt/getBranchCenter`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

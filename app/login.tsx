@@ -23,8 +23,6 @@ import {
   AntDesign,
 } from "@expo/vector-icons";
 
-import { EXPO_PUBLIC_API_BASE_URL } from "@env";
-// import authUtils from "./utils/authUtils";
 
 const Login = () => {
   const router = useRouter();
@@ -84,7 +82,7 @@ const Login = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
 
-      const response = await fetch(`${EXPO_PUBLIC_API_BASE_URL}/auth/login`, {
+      const response = await fetch(`http://192.168.8.104:5235/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
