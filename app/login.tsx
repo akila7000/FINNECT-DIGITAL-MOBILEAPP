@@ -80,19 +80,19 @@ const Login = () => {
       // Set loading state
       setApiStatus("loading");
 
-      // Make API request with timeout for better error handling
+      // Create an AbortController for timeout handling
       const controller = new AbortController();
-      // const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
 
       const response = await fetch(`${EXPO_PUBLIC_API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
         credentials: "include", // Ensures cookies are included (only works with fetch in browsers)
-        // signal: controller.signal, // Attach the AbortController signal
+        signal: controller.signal, // Attach the AbortController signal
       });
 
-      // clearTimeout(timeoutId); // Clear timeout after response is received
+      clearTimeout(timeoutId); // Clear timeout after response is received
 
       const data = await response.json(); // Parse response after clearing timeout
 
@@ -160,39 +160,38 @@ const Login = () => {
           Alert.alert("Login Failed", data?.message || "Something went wrong");
         }
       }
-    } catch (error) {
-      // Set error state
+    } catch (error: any) {
+      // Set error stte
       setApiStatus("error");
-      // Alert.alert("Network failed to connect");
-      console.log(error, "Error");
-      // Handle different error types
-      //   if (
-      //     error instanceof TypeError &&
-      //     error.message.includes("Network request failed")
-      //   ) {
-      //     setNetworkAvailable(false);
-      //     setErrorMessage(
-      //       "Network error. Please check your internet connection."
-      //     );
-      //     Alert.alert(
-      //       "Network Error",
-      //       "Please check your internet connection and try again."
-      //     );
-      //   } else if (error instanceof DOMException && error.name === "AbortError") {
-      //     setErrorMessage("Request timed out. Please try again.");
-      //     Alert.alert("Timeout", "Request timed out. Please try again.");
-      //   } else {
-      //     setErrorMessage("An unexpected error occurred. Please try again!");
-      //     Alert.alert("Error", "An unexpected error occurred. Please try again.");
-      //   }
-      // } finally {
-      //   // Always clean up loading state
-      //   if (apiStatus === "loading") {
-      //     setApiStatus("idle");
-      //   }
+
+      // Handle timeout or network errors
+      if (error.name === "AbortError") {
+        setErrorMessage(
+          "Request timed out. Please check your internet connection."
+        );
+        Alert.alert(
+          "Timeout",
+          "The request took too long. Please check your internet connection and try again."
+        );
+      } else if (error.message.includes("Network request failed")) {
+        setErrorMessage(
+          "Network error. Please check your internet connection."
+        );
+        Alert.alert(
+          "Network Error",
+          "Please check your internet connection and try again."
+        );
+      } else {
+        setErrorMessage("An unexpected error occurred. Please try again!");
+        Alert.alert("Error", "An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      // Always clean up loading state
+      if (apiStatus === "loading") {
+        setApiStatus("idle");
+      }
     }
   };
-
   // Handle retry when network is unavailable
   const handleRetry = () => {
     setNetworkAvailable(true);

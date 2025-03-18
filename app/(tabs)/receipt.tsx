@@ -60,7 +60,7 @@ export default function MFReceipt() {
   const [loanBranchText, setLoanBranchText] = useState("");
   const [centerText, setCenterText] = useState("");
   const [groupText, setGroupText] = useState("");
-
+  const [loanBranchId, setLoanBranchId] = useState<string>("");
   // State for dropdown management
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [dropdownSearch, setDropdownSearch] = useState("");
@@ -84,11 +84,13 @@ export default function MFReceipt() {
     checkAuth();
   }, []);
 
+  interface Branch {
+    Description: string;
+    BranchId: string;
+  }
   // Fetch cashier branches
   useEffect(() => {
     const fetchCashierBranches = async () => {
-
-      
       setIsLoadingCashierBranches(true);
       try {
         const response = await fetch(
@@ -111,12 +113,11 @@ export default function MFReceipt() {
 
         // Validate and map the data
         const mappedBranches = data
-          .filter((branch: any) => branch.Description) // Ensure description exists
-          .map((branch: any) => ({
-            label: branch.Description || "Unnamed Branch", // Provide a default value
+          .filter((branch: Branch) => branch.Description)
+          .map((branch: Branch) => ({
+            label: branch.Description || "Unnamed Branch",
             value: branch.BranchId,
           }));
-
         setCashierBranches(mappedBranches);
       } catch (error) {
         console.error("Failed to fetch cashier branches:", error);
@@ -130,8 +131,6 @@ export default function MFReceipt() {
     };
 
     fetchCashierBranches();
-
-
   }, []); // Remove cashierBranches from dependency array to prevent infinite loop
 
   // loan branches
@@ -160,10 +159,11 @@ export default function MFReceipt() {
         console.log("Fetched Loan Branches Data:", data); // Log the data for debugging
 
         // Map the data to the desired format
-        const mappedBranches = data.map((branch) => ({
+        const mappedBranches = data.map((branch: any) => ({
           label: branch.Description,
           value: branch.BranchId,
         }));
+        
 
         // Update state with the mapped data
         setLoanBranches(mappedBranches);
@@ -176,35 +176,44 @@ export default function MFReceipt() {
     fetchLoanBranches();
   }, []);
 
-  useEffect(() => {
-    const fetchCenters = async () => {
-      try {
-        const response = await fetch(
-          `${EXPO_PUBLIC_API_BASE_URL}/MFReceipt/getBranchCenter`,
-          {
-            method: "POST", // Specify the method as POST
-            headers: {
-              "Content-Type": "application/json", // Set the content type
-            },
-            body: JSON.stringify({}), // Add request body if required
-          }
-        );
-        const data = await response.json();
-        console.log(data);
-        setCenters(
-          data.map((center: any) => ({
-            label: center.description,
-            value: center.branchId,
-          }))
-        );
-      } catch (error) {
-        console.error("Failed to fetch centers:", error);
+  // Move this outside of useEffect
+  const fetchCenters = async (branchId: string) => {
+    try {
+      const response = await fetch(
+        `${EXPO_PUBLIC_API_BASE_URL}/MFReceipt/getBranchCenter`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ branchId }),
+          credentials: "include", // Ensures cookies are included (only works with fetch in browsers)
+          // Attach the AbortController signal
+        }
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
-    };
+      const data = await response.json();
+      console.log("Fetched centers:", data);
 
-    fetchCenters();
+      // Map the data to the desired format
+      const mappedCenters = data.map((center: any) => ({
+        label: center.Description,
+        value: center.CenterID,
+      }));
+
+      // Update state with the mapped data
+      setCenters(mappedCenters);
+    } catch (error) {
+      console.error("Failed to fetch centers:", error);
+      Alert.alert("Error", "Failed to fetch centers. Please try again.");
+    } finally {
+      // setIsLoadingCenters(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCenters(loanBranchId);
   }, []);
-
   // Handle form submission
   const handleSubmit = () => {
     const newErrors: { center?: string; search?: string; grp?: string } = {};
@@ -269,6 +278,7 @@ export default function MFReceipt() {
   };
 
   // Handle dropdown item selection
+  // Update your handleSelectItem function to trigger fetchCenters when loan branch is selected
   const handleSelectItem = (item: DropdownItem) => {
     switch (activeDropdown) {
       case "cashier":
@@ -276,6 +286,7 @@ export default function MFReceipt() {
         break;
       case "loan":
         setLoanBranchText(item.label);
+        setLoanBranchId(item.value); // Set the loan branch ID
         break;
       case "center":
         setCenter(item.value);
@@ -291,7 +302,6 @@ export default function MFReceipt() {
 
     closeDropdown();
   };
-
   // Open dropdown
   const openDropdown = (type: string) => {
     setActiveDropdown(type);
