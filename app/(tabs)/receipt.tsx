@@ -25,7 +25,14 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 // Interface for dropdown items
 interface DropdownItem {
   label: string;
-  value: string;
+  value: any;
+}
+
+// Interface for Branch data
+interface Branch {
+  Description: string;
+  BranchId: string;
+  BranchID?: string;
 }
 
 export default function MFReceipt() {
@@ -37,7 +44,7 @@ export default function MFReceipt() {
 
   // State for form inputs
   const [center, setCenter] = useState("");
-  const [grp, setGroup] = useState<number | null>(null); // Initialize to `null`
+  const [grp, setGroup] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   // State for user data
@@ -45,8 +52,7 @@ export default function MFReceipt() {
   const [userId, setUserId] = useState("");
 
   // State for loading indicators
-  const [isLoadingCashierBranches, setIsLoadingCashierBranches] =
-    useState(false);
+  const [isLoadingCashierBranches, setIsLoadingCashierBranches] = useState(false);
 
   // State for errors and API status
   const [errors, setErrors] = useState<{
@@ -62,6 +68,7 @@ export default function MFReceipt() {
   const [centerText, setCenterText] = useState("");
   const [groupText, setGroupText] = useState("");
   const [loanBranchId, setLoanBranchId] = useState<string>("");
+  
   // State for dropdown management
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [dropdownSearch, setDropdownSearch] = useState("");
@@ -75,7 +82,6 @@ export default function MFReceipt() {
     const checkAuth = async () => {
       const userDataSet = await AsyncStorage.getItem("userData");
 
-      console.log(userDataSet); // working
       if (userDataSet) {
         const userData = JSON.parse(userDataSet);
         setUserId(userData.id);
@@ -85,10 +91,6 @@ export default function MFReceipt() {
     checkAuth();
   }, []);
 
-  interface Branch {
-    Description: string;
-    BranchId: string;
-  }
   // Fetch cashier branches
   useEffect(() => {
     const fetchCashierBranches = async () => {
@@ -131,134 +133,125 @@ export default function MFReceipt() {
     };
 
     fetchCashierBranches();
-  }, []); // Remove cashierBranches from dependency array to prevent infinite loop
+  }, []);
 
-  const [branchID, setBranchId] = useState();
-
-  // loan branches
+  // Fetch loan branches
   useEffect(() => {
     const fetchLoanBranches = async () => {
       try {
-        // Make a POST request to the API endpoint
         const response = await fetch(
           `${API_BASE_URL}/MFReceipt/getLoanBranch`,
           {
-            method: "POST", // Specify the method as POST
+            method: "POST",
             headers: {
-              "Content-Type": "application/json", // Set the content type
+              "Content-Type": "application/json",
             },
-            body: JSON.stringify({}), // Add request body if required
+            body: JSON.stringify({}),
           }
         );
 
-        // Check if the response is successful
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
 
-        // Parse the response body as JSON
         const data = await response.json();
-        // console.log("Fetched Loan Branches Data:", data); // Log the data for debugging
 
         // Map the data to the desired format
-        const mappedBranches = data.map((branch: any) => ({
-          label: branch.Description, // chawakachcheri
-          value: branch.BranchID,
+        const mappedBranches = data.map((branch: Branch) => ({
+          label: branch.Description,
+          value: branch.BranchID || branch.BranchId,
         }));
-        setBranchId(data.BranchID);
 
-        // Update state with the mapped data
         setLoanBranches(mappedBranches);
       } catch (error) {
-        console.error("Failed to fetch loan branches:", error); // Log any errors
+        console.error("Failed to fetch loan branches:", error);
+        Alert.alert(
+          "Error",
+          "Failed to fetch loan branches. Please try again."
+        );
       }
     };
 
-    // Call the fetch function
     fetchLoanBranches();
   }, []);
 
-  // Move this outside of useEffect
-
-  const fetchCenters = async (loanBranchId: any) => {
+  // Fetch centers based on loan branch
+  const fetchCenters = async (loanBranchId: string) => {
     try {
       const response = await fetch(
         `${API_BASE_URL}/MFReceipt/getBranchCenter/${loanBranchId}`,
         {
           method: "GET",
           headers: { "Content-Type": "application/json" },
-
-          credentials: "include", // Ensures cookies are included (only works with fetch in browsers)
-          // Attach the AbortController signal
+          credentials: "include",
         }
       );
+      
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
+      
       const data = await response.json();
-   
-
+      
       // Map the data to the desired format
       const mappedCenters = data.map((center: any) => ({
         label: center.Description,
         value: center.CenterID,
       }));
 
-      // Update state with the mapped data
       setCenters(mappedCenters);
     } catch (error) {
       console.error("Failed to fetch centers:", error);
       Alert.alert("Error", "Failed to fetch centers. Please try again.");
-    } finally {
-      // setIsLoadingCenters(false);
     }
   };
 
-  // fetch the groups
-  const fetchGroups = async (CenterId: any) => {
+  // Fetch groups based on center
+  const fetchGroups = async (centerId: string) => {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/MFReceipt/getCenterGroup/${CenterId}`,
+        `${API_BASE_URL}/MFReceipt/getCenterGroup/${centerId}`,
         {
           method: "GET",
           headers: { "Content-Type": "application/json" },
-
-          credentials: "include", // Ensures cookies are included (only works with fetch in browsers)
-          // Attach the AbortController signal
+          credentials: "include",
         }
       );
+      
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
+      
       const data = await response.json();
-      // console.log("Fetched centers:", data);
-      // console.log(data);
-
-      // Map the data to the desired format
-      const mappedGrps = data.map((grp: any) => ({
+      
+      const mappedGroups = data.map((grp: any) => ({
         label: grp.Description,
-        value: grp.GroupID,
+        value: Number(grp.GroupID),
       }));
-      console.log("Mapped Branches:", mappedGrps);
-
-      // Update state with the mapped data
-      setGroups(mappedGrps);
+      
+      setGroups(mappedGroups);
     } catch (error) {
       console.error("Failed to fetch groups:", error);
       Alert.alert("Error", "Failed to fetch groups. Please try again.");
-    } finally {
-      // setIsLoadingCenters(false);
     }
   };
 
+  // Trigger center fetch when loan branch changes
+  useEffect(() => {
+    if (loanBranchId) {
+      fetchCenters(loanBranchId);
+    }
+  }, [loanBranchId]);
+
   // Handle form submission
   const handleSubmit = () => {
-    const newErrors: { center?: string; search?: string; grp?: any } = {};
+    const newErrors: { center?: string; search?: string; grp?: string } = {};
   
     if (!center) {
       newErrors.center = "Please select a center.";
     }
-    if (!grp ) { // Updated validation logic
+    
+    if (grp === null) {
       newErrors.grp = "Please select a group.";
     }
   
@@ -274,7 +267,7 @@ export default function MFReceipt() {
     setTimeout(() => {
       const receiptData = {
         center,
-        grp, // Include the group value
+        grp,
         searchQuery,
       };
   
@@ -283,7 +276,7 @@ export default function MFReceipt() {
   
       // Navigate to ReceiptList with data
       router.push({
-        pathname: "/(tabs)/receipt-list",
+        pathname: "/",
         params: { receiptData: JSON.stringify(receiptData) },
       });
     }, 1500);
@@ -314,14 +307,8 @@ export default function MFReceipt() {
         return [];
     }
   };
-  useEffect(() => {
-    if (loanBranchId) {
-      fetchCenters(loanBranchId);
-    }
-  }, [loanBranchId]);
 
   // Handle dropdown item selection
-  // Update your handleSelectItem function to trigger fetchCenters when loan branch is selected
   const handleSelectItem = (item: DropdownItem) => {
     switch (activeDropdown) {
       case "cashier":
@@ -330,7 +317,6 @@ export default function MFReceipt() {
       case "loan":
         setLoanBranchText(item.label);
         setLoanBranchId(item.value);
-        fetchCenters(item.value);
         break;
       case "center":
         setCenter(item.value);
@@ -339,15 +325,15 @@ export default function MFReceipt() {
         if (errors.center) setErrors({ ...errors, center: undefined });
         break;
       case "group":
-        setGroup(item.value);
+        setGroup(Number(item.value));
         setGroupText(item.label);
-        console.log("Selected Group Value:", item.value); // Debugging statement
         if (errors.grp) setErrors({ ...errors, grp: undefined });
         break;
     }
-  
+
     closeDropdown();
   };
+
   // Open dropdown
   const openDropdown = (type: string) => {
     setActiveDropdown(type);
@@ -538,7 +524,7 @@ export default function MFReceipt() {
                     data={getDropdownItems()}
                     keyExtractor={(item, index) =>
                       item.value?.toString() || index.toString()
-                    } // Ensure unique keys
+                    }
                     renderItem={({ item }) => (
                       <TouchableOpacity
                         style={styles.dropdownItem}
