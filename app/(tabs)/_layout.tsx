@@ -4,6 +4,8 @@ import { Platform, Text, TouchableOpacity, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+
 
 export default function TabLayout() {
   const router = useRouter();
@@ -27,7 +29,7 @@ export default function TabLayout() {
               const timeoutId = setTimeout(() => controller.abort(), 5000); // 5-second timeout
 
               // Call the logout API
-              const response = await fetch(`/auth/logout`, {
+              const response = await fetch(`${API_BASE_URL}/auth/logout`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({}),

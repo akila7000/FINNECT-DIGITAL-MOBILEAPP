@@ -20,6 +20,7 @@ import { FontAwesome } from "@expo/vector-icons";
 import { useNavigation, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 // Interface for dropdown items
 interface DropdownItem {
@@ -94,7 +95,7 @@ export default function MFReceipt() {
       setIsLoadingCashierBranches(true);
       try {
         const response = await fetch(
-          `http://192.168.8.104:5235/MFReceipt/getCashierBranch`,
+          `${API_BASE_URL}/MFReceipt/getCashierBranch`,
           {
             method: "POST",
             headers: {
@@ -139,7 +140,7 @@ export default function MFReceipt() {
       try {
         // Make a POST request to the API endpoint
         const response = await fetch(
-          `http://192.168.8.104:5235/MFReceipt/getLoanBranch`,
+          `${API_BASE_URL}/MFReceipt/getLoanBranch`,
           {
             method: "POST", // Specify the method as POST
             headers: {
@@ -163,7 +164,6 @@ export default function MFReceipt() {
           label: branch.Description,
           value: branch.BranchId,
         }));
-        
 
         // Update state with the mapped data
         setLoanBranches(mappedBranches);
@@ -176,11 +176,13 @@ export default function MFReceipt() {
     fetchLoanBranches();
   }, []);
 
+  const
+
   // Move this outside of useEffect
   const fetchCenters = async (branchId: string) => {
     try {
       const response = await fetch(
-        `http://192.168.8.104:5235/MFReceipt/getBranchCenter`,
+        `${API_BASE_URL}/MFReceipt/getBranchCenter`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -199,7 +201,9 @@ export default function MFReceipt() {
       const mappedCenters = data.map((center: any) => ({
         label: center.Description,
         value: center.CenterID,
+
       }));
+      
 
       // Update state with the mapped data
       setCenters(mappedCenters);
@@ -210,6 +214,7 @@ export default function MFReceipt() {
       // setIsLoadingCenters(false);
     }
   };
+
 
   useEffect(() => {
     fetchCenters(loanBranchId);
@@ -490,7 +495,9 @@ export default function MFReceipt() {
 
                   <FlatList
                     data={getDropdownItems()}
-                    keyExtractor={(item) => item.value}
+                    keyExtractor={(item, index) =>
+                      item.value?.toString() || index.toString()
+                    } // Ensure unique keys
                     renderItem={({ item }) => (
                       <TouchableOpacity
                         style={styles.dropdownItem}
