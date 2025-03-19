@@ -249,15 +249,25 @@ const MFReceiptList: React.FC = () => {
     setIsUpdatingPayment(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      // Calculate the new Total_Due locally
+      const paymentAmount = parseFloat(payAmount);
+      const newTotalDue = selectedReceipt.Total_Due - paymentAmount;
 
-      // Fix: Use loanID instead of id for matching
+      // Ensure the Total_Due doesn't go below zero
+      const updatedTotalDue = Math.max(newTotalDue, 0);
+
+      // Update the local state with the new Total_Due and payAmount
       const updatedReceipts = receiptData.map((receipt) =>
         receipt.loanID === selectedReceipt.loanID
-          ? { ...receipt, payAmount: parseFloat(payAmount) }
+          ? {
+              ...receipt,
+              Total_Due: updatedTotalDue, // Update Total_Due
+              payAmount: paymentAmount, // Update payAmount
+            }
           : receipt
       );
 
+      // Update the state with the modified receipt data
       setReceiptData(updatedReceipts);
       setPayModalVisible(false);
       setPayAmount("");
@@ -382,13 +392,11 @@ const MFReceiptList: React.FC = () => {
         }
       );
 
-      console.log(paymentData, "data saved");
-
       // Check if the response was successful
       if (!response.ok) {
         // For error responses, first try to get the response as text
         const errorText = await response.text();
-        console.log("Response error......", errorText);
+        
         Alert.alert(
           "Error",
           errorText || "An error occurred during processing"
@@ -400,7 +408,7 @@ const MFReceiptList: React.FC = () => {
       const responseData = await response.text();
       // console.log("API Response:", responseData);
 
-      const successMessage = `Total amount and payments saved successfully. ${responseData}`;
+      const successMessage = `Total amount of Receipt No ${responseData} and payments saved successfully.`;
       Alert.alert("Success", successMessage);
     } catch (err: any) {
       // This catches network errors or JSON parsing errors

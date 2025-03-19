@@ -391,9 +391,6 @@ export default function MFReceipt() {
     setDropdownSearch("");
   };
 
-  // console.log("CenterId:", center);
-  // console.log( "gropId:", grp);
-
   // Render field with selection UI
   const renderSelectField = (
     label: string,
