@@ -69,6 +69,7 @@ export default function MFReceipt() {
   const [centerText, setCenterText] = useState("");
   const [groupText, setGroupText] = useState("");
   const [loanBranchId, setLoanBranchId] = useState<string>("");
+  const [cashierBranchId, setCachierBranchId] = useState<string>("");
 
   // State for dropdown management
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -78,7 +79,7 @@ export default function MFReceipt() {
   const [grpId, setGrpID] = useState();
   // Router and navigation
   const router = useRouter();
-  const navigation = useNavigation();
+
 
   // Check if user is logged in
   useEffect(() => {
@@ -121,9 +122,10 @@ export default function MFReceipt() {
           .filter((branch: Branch) => branch.Description)
           .map((branch: Branch) => ({
             label: branch.Description || "Unnamed Branch",
-            value: branch.BranchId,
+            value: branch.BranchID,
           }));
         setCashierBranches(mappedBranches);
+
       } catch (error) {
         console.error("Failed to fetch cashier branches:", error);
         Alert.alert(
@@ -311,6 +313,7 @@ export default function MFReceipt() {
     switch (activeDropdown) {
       case "cashier":
         setCashierBranchText(item.label);
+        setCachierBranchId(item.value);
         break;
       case "loan":
         setLoanBranchText(item.label);
@@ -345,6 +348,7 @@ export default function MFReceipt() {
         body: JSON.stringify({
           CenterID: center.toString(),
           GroupID: grp.toString(),
+
           searchQuery: searchQuery || "",
         }),
       });
@@ -359,7 +363,13 @@ export default function MFReceipt() {
       // Navigate to ReceiptList with the fetched data
       router.push({
         pathname: "/(tabs)/receipt-list",
-        params: { receiptData: JSON.stringify(data) },
+        params: {
+          receiptData: JSON.stringify(data),
+          branchID: loanBranchId,
+          collectDate: new Date().toISOString(),
+          userBranchID: cashierBranchId,
+          // userId: userId,
+        },
       });
     } catch (error) {
       console.error("Failed to fetch receipt data:", error);

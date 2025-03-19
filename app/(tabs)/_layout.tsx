@@ -48,7 +48,7 @@ export default function TabLayout() {
               await AsyncStorage.removeItem("userData");
               await AsyncStorage.removeItem("userName");
 
-              // Redirect to the login screen
+              // Redirect to the home screen
               router.replace("/");
             } catch (error) {
               console.error("Logout error:", error);

@@ -13,15 +13,16 @@ import {
   Platform,
   StyleSheet,
 } from "react-native";
-import { FontAwesome, Feather } from "@expo/vector-icons";
+import { FontAwesome } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useNavigation } from "expo-router";
 import { useLocalSearchParams } from "expo-router";
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 // Define types
 type ReceiptItem = {
-  loanID: string;
-  LoanNo: number;
+  loanID: number;
+  LoanNo: any;
   Client_Name: string;
   GroupName: string;
   Loan_Amount: number;
@@ -29,34 +30,6 @@ type ReceiptItem = {
   payAmount?: number;
   Total_Due: number;
 };
-
-interface HeaderComponentProps {
-  activeLogBtn: boolean;
-  title: string;
-  onBack: () => void;
-  logOut: () => void;
-}
-
-const HeaderComponent: React.FC<HeaderComponentProps> = ({
-  activeLogBtn,
-  title,
-  onBack,
-  logOut,
-}) => (
-  <View style={styles.header}>
-    <TouchableOpacity style={styles.backButton} onPress={onBack}>
-      <FontAwesome name="arrow-left" size={24} color="#333" />
-    </TouchableOpacity>
-
-    <Text style={styles.headerTitle}>{title}</Text>
-
-    {activeLogBtn && (
-      <TouchableOpacity style={styles.logoutButton} onPress={logOut}>
-        <Feather name="user" size={20} color="#4D90FE" />
-      </TouchableOpacity>
-    )}
-  </View>
-);
 
 interface ReceiptItemComponentProps {
   item: ReceiptItem;
@@ -182,8 +155,11 @@ const MFReceiptList: React.FC = () => {
   // Get params from router
   const params = useLocalSearchParams();
   const { receiptData: receiptDataParam } = params;
+  const { branchID, collectDate, userBranchID } = params;
 
-  const [totalAmount, setTotalAmount] = useState<string>("600000");
+  // console.log( branchID, collectDate, userBranchID);
+
+  const [totalAmount, setTotalAmount] = useState<string>("0");
   const [isPayModalVisible, setPayModalVisible] = useState<boolean>(false);
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptItem | null>(
     null
@@ -195,8 +171,6 @@ const MFReceiptList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isUpdatingPayment, setIsUpdatingPayment] = useState<boolean>(false);
-
-  const navigation = useNavigation();
 
   // Use a single useEffect to handle the params
   useEffect(() => {
@@ -231,8 +205,8 @@ const MFReceiptList: React.FC = () => {
       // Sample data when no params provided
       const sampleData = [
         {
-          loanID: "loan1",
-          LoanNo: 1234,
+          loanID: 234,
+          LoanNo: "loan1",
           Client_Name: "John Doe",
           GroupName: "Group A",
           Loan_Amount: 10000,
@@ -240,8 +214,8 @@ const MFReceiptList: React.FC = () => {
           Total_Due: 5000,
         },
         {
-          loanID: "loan2",
-          LoanNo: 2345,
+          loanID: 123,
+          LoanNo: "loan2",
           Client_Name: "Jane Smith",
           GroupName: "Group B",
           Loan_Amount: 15000,
@@ -382,62 +356,59 @@ const MFReceiptList: React.FC = () => {
     setIsSaving(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800)); // Simulate API call
-
       // Prepare data to send to the server
       const paymentData = {
-        totalAmount: enteredTotal,
-        calculatedTotal: totalPayAmount,
-        receipts: receiptsWithPayments.map((item: any) => ({
+        branchID: branchID,
+        collectDate: collectDate,
+        amount: enteredTotal,
+        receiptDetail: receiptsWithPayments.map((item: any) => ({
           loanID: item.loanID,
-          LoanNo: item.LoanNo,
-          Client_Name: item.Client_Name,
-          payAmount: item.payAmount,
-          Total_Due: item.Total_Due,
+          amount: item.payAmount,
+          servingTransAmount: 0,
+          accountNo: "",
         })),
+        userBranchID: userBranchID,
       };
 
-      console.log("Saving payment data:", paymentData);
-
       // Here you would send paymentData to your API
-      // const response = await fetch(`${API_BASE_URL}/your-endpoint`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(paymentData),
-      // });
+      const response = await fetch(
+        `${API_BASE_URL}/MFReceipt/generateReceipt`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(paymentData),
+        }
+      );
 
-      Alert.alert("Success", "Total amount and payments saved successfully.");
-    } catch (err) {
-      Alert.alert("Error", "Failed to save payment data. Please try again.");
-      console.error("Error saving payment data:", err);
+      console.log(paymentData, "data saved");
+
+      // Check if the response was successful
+      if (!response.ok) {
+        // For error responses, first try to get the response as text
+        const errorText = await response.text();
+        console.log("Response error......", errorText);
+        Alert.alert(
+          "Error",
+          errorText || "An error occurred during processing"
+        );
+        return;
+      }
+
+      // Only parse as JSON if the response was successful
+      const responseData = await response.text();
+      // console.log("API Response:", responseData);
+
+      const successMessage = `Total amount and payments saved successfully. ${responseData}`;
+      Alert.alert("Success", successMessage);
+    } catch (err: any) {
+      // This catches network errors or JSON parsing errors
+      Alert.alert("Error", err.message || "An unexpected error occurred");
+      // console.error("Error saving payment data:", err);
     } finally {
       setIsSaving(false);
     }
-  };
-  const TotalPayAmountDisplay = () => {
-    // Calculate the sum of all pay amounts
-    const totalPayAmount = receiptData.reduce(
-      (sum, item) => sum + (item.payAmount || 0),
-      0
-    );
-
-    // Count receipts with payment
-    const receiptsWithPayment = receiptData.filter(
-      (item) => item.payAmount !== undefined && item.payAmount !== null
-    ).length;
-
-    return (
-      <View style={styles.totalPayAmountContainer}>
-        <Text style={styles.totalPayAmountLabel}>
-          Sum of Pay Amounts ({receiptsWithPayment} items)
-        </Text>
-        <Text style={styles.totalPayAmountValue}>
-          {totalPayAmount.toLocaleString()}
-        </Text>
-      </View>
-    );
   };
 
   const renderEmptyList = () => (
@@ -488,7 +459,7 @@ const MFReceiptList: React.FC = () => {
                   }}
                 />
               )}
-              keyExtractor={(item) => item.loanID}
+              keyExtractor={(item) => item.LoanNo}
               contentContainerStyle={[
                 styles.listContainer,
                 { paddingBottom: 80 }, // Add extra padding at bottom for footer space
@@ -508,7 +479,7 @@ const MFReceiptList: React.FC = () => {
 
         {/* Remove SafeAreaView around the footer */}
         <View style={styles.footerContainer}>
-          <TotalPayAmountDisplay />
+          {/* <TotalPayAmountDisplay /> */}
           <View style={styles.totalAmountContainer}>
             <Text style={styles.totalAmountTitle}>Total Amount</Text>
             <View style={styles.inputContainer}>
