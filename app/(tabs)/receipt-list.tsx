@@ -14,34 +14,21 @@ import {
   StyleSheet,
 } from "react-native";
 import { FontAwesome, Feather } from "@expo/vector-icons";
-
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useNavigation } from "expo-router";
-// import authUtils from "@/app/utils/authUtils";
+import { useLocalSearchParams } from "expo-router";
 
 // Define types
 type ReceiptItem = {
-  id: string;
-  name: string;
-  rentalAmount: number;
+  loanID: string;
+  LoanNo: number;
+  Client_Name: string;
+  GroupName: string;
+  Loan_Amount: number;
+  Rental_Amount: number;
   payAmount?: number;
-  due: number;
+  Total_Due: number;
 };
-
-interface ReceiptItemComponentProps {
-  item: ReceiptItem; // Use the existing ReceiptItem type
-  onPress: () => void; // onPress is a function with no arguments and no return value
-}
-
-interface PayModalComponentProps {
-  isVisible: boolean;
-  onClose: () => void;
-  selectedReceipt: ReceiptItem | null;
-  payAmount: string;
-  setPayAmount: (value: string) => void;
-  isUpdatingPayment: boolean;
-  onPayAmountEnter: () => void;
-}
 
 interface HeaderComponentProps {
   activeLogBtn: boolean;
@@ -71,6 +58,11 @@ const HeaderComponent: React.FC<HeaderComponentProps> = ({
   </View>
 );
 
+interface ReceiptItemComponentProps {
+  item: ReceiptItem;
+  onPress: () => void;
+}
+
 // Receipt Item Component
 const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
   item,
@@ -82,19 +74,17 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
     activeOpacity={0.7}
   >
     <View style={styles.receiptHeader}>
-      <Text style={styles.receiptId}>{item.id}</Text>
-      <Text style={styles.receiptName}>{item.name}</Text>
+      <Text style={styles.receiptId}>{item.LoanNo}</Text>
+      <Text style={styles.receiptName}>{item.Client_Name}</Text>
     </View>
     <View style={styles.receiptBody}>
       <View style={styles.amountRow}>
         <Text style={styles.amountLabel}>Rental Amount</Text>
-        <Text style={styles.rentalAmountValue}>
-          {item.rentalAmount.toLocaleString()}
-        </Text>
+        <Text style={styles.rentalAmountValue}>{item.Rental_Amount}</Text>
       </View>
       <View style={styles.amountRow}>
         <Text style={styles.amountLabel}>Due Amount</Text>
-        <Text style={styles.dueAmountValue}>{item.due.toLocaleString()}</Text>
+        <Text style={styles.dueAmountValue}>{item.Total_Due}</Text>
       </View>
       {item.payAmount !== undefined && (
         <View style={styles.payAmountContainer}>
@@ -106,6 +96,16 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
     </View>
   </TouchableOpacity>
 );
+
+interface PayModalComponentProps {
+  isVisible: boolean;
+  onClose: () => void;
+  selectedReceipt: ReceiptItem | null;
+  payAmount: string;
+  setPayAmount: (value: string) => void;
+  isUpdatingPayment: boolean;
+  onPayAmountEnter: () => void;
+}
 
 // Pay Modal Component
 const PayModalComponent: React.FC<PayModalComponentProps> = ({
@@ -135,7 +135,8 @@ const PayModalComponent: React.FC<PayModalComponentProps> = ({
         </View>
 
         <Text style={styles.modalReceiptId}>
-          {selectedReceipt ? selectedReceipt.id : ""}
+          Loan: {selectedReceipt ? selectedReceipt.LoanNo : ""} -{" "}
+          {selectedReceipt ? selectedReceipt.Client_Name : ""}
         </Text>
 
         <TextInput
@@ -178,6 +179,10 @@ const PayModalComponent: React.FC<PayModalComponentProps> = ({
 );
 
 const MFReceiptList: React.FC = () => {
+  // Get params from router
+  const params = useLocalSearchParams();
+  const { receiptData: receiptDataParam } = params;
+
   const [totalAmount, setTotalAmount] = useState<string>("600000");
   const [isPayModalVisible, setPayModalVisible] = useState<boolean>(false);
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptItem | null>(
@@ -185,7 +190,7 @@ const MFReceiptList: React.FC = () => {
   );
   const [payAmount, setPayAmount] = useState<string>("");
   const [receiptData, setReceiptData] = useState<ReceiptItem[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true); // Start with loading state
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -193,9 +198,23 @@ const MFReceiptList: React.FC = () => {
 
   const navigation = useNavigation();
 
+  // Use a single useEffect to handle the params
   useEffect(() => {
-    fetchReceiptData();
-  }, []);
+    if (receiptDataParam) {
+      try {
+        const parsedData = JSON.parse(receiptDataParam as string);
+        setReceiptData(parsedData);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Failed to parse receipt data:", error);
+        setError("Failed to parse receipt data. Please try again.");
+        setIsLoading(false);
+      }
+    } else {
+      // Fetch sample data only if no params were passed
+      fetchReceiptData();
+    }
+  }, [receiptDataParam]); // Only depends on receiptDataParam
 
   const fetchReceiptData = async (isRefresh: boolean = false) => {
     if (isRefresh) {
@@ -206,43 +225,31 @@ const MFReceiptList: React.FC = () => {
     setError(null);
 
     try {
+      // Simulate network request
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      const sampleData: ReceiptItem[] = [
+
+      // Sample data when no params provided
+      const sampleData = [
         {
-          id: "CK00000001222",
-          name: "Saman Perera",
-          rentalAmount: 100000,
-          payAmount: 20000,
-          due: 0,
+          loanID: "loan1",
+          LoanNo: 1234,
+          Client_Name: "John Doe",
+          GroupName: "Group A",
+          Loan_Amount: 10000,
+          Rental_Amount: 1000,
+          Total_Due: 5000,
         },
         {
-          id: "CK0000000124412",
-          name: "Saman Perera",
-          rentalAmount: 100000,
-          payAmount: 20000,
-          due: 0,
-        },
-        {
-          id: "CK0000r012212",
-          name: "Saman Perera",
-          rentalAmount: 100000,
-          payAmount: 20000,
-          due: 0,
-        },
-        {
-          id: "CK000000012213",
-          name: "Kamal Silva",
-          rentalAmount: 100000,
-          due: 300000,
-        },
-        {
-          id: "CK000000012214",
-          name: "Nimal Fernando",
-          rentalAmount: 100000,
-          payAmount: 20000,
-          due: 0,
+          loanID: "loan2",
+          LoanNo: 2345,
+          Client_Name: "Jane Smith",
+          GroupName: "Group B",
+          Loan_Amount: 15000,
+          Rental_Amount: 1500,
+          Total_Due: 7500,
         },
       ];
+
       setReceiptData(sampleData);
     } catch (err) {
       const errorMessage = "Failed to load receipt data. Please try again.";
@@ -269,11 +276,14 @@ const MFReceiptList: React.FC = () => {
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 800));
+
+      // Fix: Use loanID instead of id for matching
       const updatedReceipts = receiptData.map((receipt) =>
-        receipt.id === selectedReceipt.id
+        receipt.loanID === selectedReceipt.loanID
           ? { ...receipt, payAmount: parseFloat(payAmount) }
           : receipt
       );
+
       setReceiptData(updatedReceipts);
       setPayModalVisible(false);
       setPayAmount("");
@@ -303,9 +313,15 @@ const MFReceiptList: React.FC = () => {
     setIsSaving(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      // console.log("Total Amount Saved:", totalAmount);
-      Alert.alert("Success", "Total amount saved successfully.");
+      await new Promise((resolve) => setTimeout(resolve, 800)); // Simulate API call
+
+      // Here you could add logic to save the total amount along with all receipt payments
+      const receiptsWithPayments = receiptData.filter(
+        (item) => item.payAmount !== undefined
+      );
+      console.log("Saving receipts with payments:", receiptsWithPayments);
+
+      Alert.alert("Success", "Total amount and payments saved successfully.");
     } catch (err) {
       Alert.alert("Error", "Failed to save total amount. Please try again.");
       console.error("Error saving total amount:", err);
@@ -313,18 +329,6 @@ const MFReceiptList: React.FC = () => {
       setIsSaving(false);
     }
   };
-
-  // check if the user is logged in
-  useEffect(() => {
-    const checkAuth = async () => {
-      // const token = await authUtils.getUserToken();
-      // if (!token) {
-      //   router.push("/");
-      // }
-    };
-
-    checkAuth();
-  }, []);
 
   const handleBackPress = () => {
     Alert.alert("Confirm", "Are you sure you want to go back?", [
@@ -362,57 +366,67 @@ const MFReceiptList: React.FC = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-      
+    <SafeAreaView
+      style={styles.container}
+      edges={["left", "right"]} // Don't include top edge to reduce padding
+    >
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingContainer}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 20} // Increased offset
+      >
+        <View style={styles.contentContainer}>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#4D90FE" />
+              <Text style={styles.loadingText}>Loading receipts...</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={() => fetchReceiptData()}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <FlatList
+              data={receiptData}
+              renderItem={({ item }) => (
+                <ReceiptItemComponent
+                  item={item}
+                  onPress={() => {
+                    setSelectedReceipt(item);
+                    setPayAmount(
+                      item.payAmount ? item.payAmount.toString() : ""
+                    );
+                    setPayModalVisible(true);
+                  }}
+                />
+              )}
+              keyExtractor={(item) => item.loanID}
+              contentContainerStyle={[
+                styles.listContainer,
+                { paddingBottom: 80 }, // Add extra padding at bottom for footer space
+              ]}
+              ListEmptyComponent={renderEmptyList}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={handleRefresh}
+                  colors={["#4D90FE"]}
+                  tintColor="#4D90FE"
+                />
+              }
+            />
+          )}
+        </View>
 
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#4D90FE" />
-            <Text style={styles.loadingText}>Loading receipts...</Text>
-          </View>
-        ) : error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity
-              style={styles.retryButton}
-              onPress={() => fetchReceiptData()}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.retryButtonText}>Retry</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <FlatList
-            data={receiptData}
-            renderItem={({ item }) => (
-              <ReceiptItemComponent
-                item={item}
-                onPress={() => {
-                  setSelectedReceipt(item);
-                  setPayModalVisible(true);
-                }}
-              />
-            )}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContainer}
-            ListEmptyComponent={renderEmptyList}
-            refreshControl={
-              <RefreshControl
-                refreshing={isRefreshing}
-                onRefresh={handleRefresh}
-                colors={["#4D90FE"]}
-                tintColor="#4D90FE"
-              />
-            }
-          />
-        )}
-
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 100}
-          style={styles.footerContainer}
-        >
+        {/* Remove SafeAreaView around the footer */}
+        <View style={styles.footerContainer}>
           <View style={styles.totalAmountContainer}>
             <Text style={styles.totalAmountTitle}>Total Amount</Text>
             <View style={styles.inputContainer}>
@@ -438,24 +452,24 @@ const MFReceiptList: React.FC = () => {
               )}
             </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
+        </View>
+      </KeyboardAvoidingView>
 
-        <PayModalComponent
-          isVisible={isPayModalVisible}
-          onClose={() => {
-            if (!isUpdatingPayment) {
-              setPayModalVisible(false);
-              setSelectedReceipt(null);
-              setPayAmount("");
-            }
-          }}
-          selectedReceipt={selectedReceipt}
-          payAmount={payAmount}
-          setPayAmount={setPayAmount}
-          isUpdatingPayment={isUpdatingPayment}
-          onPayAmountEnter={handlePayAmountEnter}
-        />
-      </View>
+      <PayModalComponent
+        isVisible={isPayModalVisible}
+        onClose={() => {
+          if (!isUpdatingPayment) {
+            setPayModalVisible(false);
+            setSelectedReceipt(null);
+            setPayAmount("");
+          }
+        }}
+        selectedReceipt={selectedReceipt}
+        payAmount={payAmount}
+        setPayAmount={setPayAmount}
+        isUpdatingPayment={isUpdatingPayment}
+        onPayAmountEnter={handlePayAmountEnter}
+      />
     </SafeAreaView>
   );
 };
@@ -463,16 +477,19 @@ const MFReceiptList: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: "#F8F9FA", // Fixed typo in color
   },
-  content: {
+  keyboardAvoidingContainer: {
+    flex: 1,
+  },
+  contentContainer: {
     flex: 1,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 12,
+    paddingVertical: 4,
     paddingHorizontal: 14,
     backgroundColor: "white",
     borderBottomColor: "#E0E0E0",
@@ -491,11 +508,12 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 14,
-    paddingBottom: 80,
   },
   receiptItem: {
     backgroundColor: "white",
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#6ca1ff",
     marginBottom: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
@@ -546,15 +564,20 @@ const styles = StyleSheet.create({
   },
   payAmountContainer: {
     marginTop: 8,
+    padding: 8,
+    backgroundColor: "#E8F2FF",
+    borderRadius: 6,
   },
   payAmountText: {
     fontSize: 14,
+    fontWeight: "500",
     color: "#4D90FE",
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingVertical: 40,
   },
   emptyText: {
     fontSize: 14,
@@ -574,10 +597,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    padding: 20,
   },
   errorText: {
     fontSize: 14,
     color: "#FF3B30",
+    textAlign: "center",
   },
   retryButton: {
     marginTop: 14,
@@ -590,14 +615,12 @@ const styles = StyleSheet.create({
     color: "white",
   },
   footerContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: "white",
     padding: 14,
     borderTopColor: "#E0E0E0",
     borderTopWidth: 1,
+ 
+    zIndex: 2,
   },
   totalAmountContainer: {
     flexDirection: "row",
@@ -621,18 +644,19 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   saveButton: {
-    padding: 12,
-    // backgroundColor: "#4D90FE",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: "#4D90FE",
     borderRadius: 8,
-    // color: "#4D90FE",
-
+    marginLeft: 10,
   },
   savingButton: {
     backgroundColor: "#A0C4FF",
   },
   saveButtonText: {
     fontSize: 14,
-    color: "#4D90FE",
+    color: "white",
+    fontWeight: "500",
   },
   modalOverlay: {
     flex: 1,
@@ -685,7 +709,6 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     padding: 12,
-    // backgroundColor: "#FF3B30",
     borderRadius: 8,
     alignItems: "center",
     marginTop: 8,

@@ -63,7 +63,7 @@ export default function TabLayout() {
   // Logout button component
   const LogoutButton = () => (
     <TouchableOpacity onPress={handleLogout} style={{ marginRight: 15 }}>
-      <Ionicons name="log-out-outline" size={24} color="white" />
+      <Ionicons name="log-out-outline" size={25} color="white" />
     </TouchableOpacity>
   );
 
@@ -77,10 +77,12 @@ export default function TabLayout() {
           fontWeight: "500",
         },
         tabBarStyle: {
-          height: Platform.OS === "ios" ? 69 : 90,
+          height: Platform.OS === "ios" ? 75 : 90,
           paddingBottom: Platform.OS === "ios" ? 30 : 10,
-          paddingTop: 10,
+          paddingTop: 5,
           backgroundColor: "white",
+          justifyContent:"space-between",
+
           borderTopWidth: 1,
         },
         headerStyle: {

@@ -52,7 +52,8 @@ export default function MFReceipt() {
   const [userId, setUserId] = useState("");
 
   // State for loading indicators
-  const [isLoadingCashierBranches, setIsLoadingCashierBranches] = useState(false);
+  const [isLoadingCashierBranches, setIsLoadingCashierBranches] =
+    useState(false);
 
   // State for errors and API status
   const [errors, setErrors] = useState<{
@@ -68,11 +69,13 @@ export default function MFReceipt() {
   const [centerText, setCenterText] = useState("");
   const [groupText, setGroupText] = useState("");
   const [loanBranchId, setLoanBranchId] = useState<string>("");
-  
+
   // State for dropdown management
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [dropdownSearch, setDropdownSearch] = useState("");
 
+  const [centerId, setCenterID] = useState();
+  const [grpId, setGrpID] = useState();
   // Router and navigation
   const router = useRouter();
   const navigation = useNavigation();
@@ -186,18 +189,24 @@ export default function MFReceipt() {
           credentials: "include",
         }
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       // Map the data to the desired format
       const mappedCenters = data.map((center: any) => ({
         label: center.Description,
         value: center.CenterID,
       }));
+
+      // If you want to get the first center's CenterID
+      const centerId = mappedCenters.length > 0 ? mappedCenters[0].value : null;
+
+      setCenterID(centerId);
+      // console.log("Center ID", centerId);
 
       setCenters(mappedCenters);
     } catch (error) {
@@ -217,18 +226,23 @@ export default function MFReceipt() {
           credentials: "include",
         }
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+      console.log("Raw API Response:", data); // 🔍 Check what API returns
+
       const mappedGroups = data.map((grp: any) => ({
         label: grp.Description,
-        value: Number(grp.GroupID),
+        value: Number(grp.GroupID), // Ensure it's converted to a number
       }));
-      
+
+      // Get the first group's ID if available
+      const firstGrpID = mappedGroups.length > 0 ? mappedGroups[0].value : null;
+
+      setGrpID(firstGrpID);
       setGroups(mappedGroups);
     } catch (error) {
       console.error("Failed to fetch groups:", error);
@@ -246,40 +260,24 @@ export default function MFReceipt() {
   // Handle form submission
   const handleSubmit = () => {
     const newErrors: { center?: string; search?: string; grp?: string } = {};
-  
+
     if (!center) {
       newErrors.center = "Please select a center.";
     }
-    
+
     if (grp === null) {
       newErrors.grp = "Please select a group.";
     }
-  
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-  
+
     setErrors({});
-    setApiStatus("loading");
-  
-    // Simulate API call
-    setTimeout(() => {
-      const receiptData = {
-        center,
-        grp,
-        searchQuery,
-      };
-  
-      setApiStatus("success");
-      Alert.alert("Success", "Receipt details fetched successfully");
-  
-      // Navigate to ReceiptList with data
-      router.push({
-        pathname: "/",
-        params: { receiptData: JSON.stringify(receiptData) },
-      });
-    }, 1500);
+
+    // Call the API function
+    fetchReceiptData();
   };
 
   // Get dropdown items based on active dropdown
@@ -334,6 +332,42 @@ export default function MFReceipt() {
     closeDropdown();
   };
 
+  // Add this function to make the API call with center and group IDs
+  const fetchReceiptData = async () => {
+    setApiStatus("loading");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/MFReceipt/getLoanDetails`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          CenterID: center.toString(),
+          GroupID: grp.toString(),
+          searchQuery: searchQuery || "",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setApiStatus("success");
+
+      // Navigate to ReceiptList with the fetched data
+      router.push({
+        pathname: "/(tabs)/receipt-list",
+        params: { receiptData: JSON.stringify(data) },
+      });
+    } catch (error) {
+      console.error("Failed to fetch receipt data:", error);
+      setApiStatus("error");
+      Alert.alert("Error", "Failed to fetch receipt data. Please try again.");
+    }
+  };
+
   // Open dropdown
   const openDropdown = (type: string) => {
     setActiveDropdown(type);
@@ -346,6 +380,9 @@ export default function MFReceipt() {
     setActiveDropdown(null);
     setDropdownSearch("");
   };
+
+  // console.log("CenterId:", center);
+  // console.log( "gropId:", grp);
 
   // Render field with selection UI
   const renderSelectField = (
