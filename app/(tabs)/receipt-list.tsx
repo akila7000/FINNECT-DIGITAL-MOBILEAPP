@@ -310,53 +310,134 @@ const MFReceiptList: React.FC = () => {
       Alert.alert("Invalid Input", "Please enter a valid total amount.");
       return;
     }
+
+    // Calculate the sum of all pay amounts
+    const receiptsWithPayments = receiptData.filter(
+      (item) => item.payAmount !== undefined && item.payAmount !== null
+    );
+
+    const totalPayAmount = receiptsWithPayments.reduce(
+      (sum, item) => sum + (item.payAmount || 0),
+      0
+    );
+
+    // Compare total pay amount with entered total amount
+    const enteredTotal = parseFloat(totalAmount);
+
+    if (receiptsWithPayments.length === 0) {
+      Alert.alert(
+        "No Payments",
+        "You haven't entered any payment amounts. Would you like to proceed anyway?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Proceed",
+            onPress: () =>
+              processPayment(
+                enteredTotal,
+                totalPayAmount,
+                receiptsWithPayments
+              ),
+          },
+        ]
+      );
+      return;
+    }
+
+    if (totalPayAmount !== enteredTotal) {
+      Alert.alert(
+        "Amount Mismatch",
+        `The sum of payment amounts (${totalPayAmount}) doesn't match the entered total amount (${enteredTotal}). Would you like to proceed anyway?`,
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Proceed",
+            onPress: () =>
+              processPayment(
+                enteredTotal,
+                totalPayAmount,
+                receiptsWithPayments
+              ),
+          },
+        ]
+      );
+      return;
+    }
+
+    // If amounts match, proceed with saving
+    processPayment(enteredTotal, totalPayAmount, receiptsWithPayments);
+  };
+
+  const processPayment = async (
+    enteredTotal: any,
+    totalPayAmount: any,
+    receiptsWithPayments: any
+  ) => {
     setIsSaving(true);
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 800)); // Simulate API call
 
-      // Here you could add logic to save the total amount along with all receipt payments
-      const receiptsWithPayments = receiptData.filter(
-        (item) => item.payAmount !== undefined
-      );
-      console.log("Saving receipts with payments:", receiptsWithPayments);
+      // Prepare data to send to the server
+      const paymentData = {
+        totalAmount: enteredTotal,
+        calculatedTotal: totalPayAmount,
+        receipts: receiptsWithPayments.map((item: any) => ({
+          loanID: item.loanID,
+          LoanNo: item.LoanNo,
+          Client_Name: item.Client_Name,
+          payAmount: item.payAmount,
+          Total_Due: item.Total_Due,
+        })),
+      };
+
+      console.log("Saving payment data:", paymentData);
+
+      // Here you would send paymentData to your API
+      // const response = await fetch(`${API_BASE_URL}/your-endpoint`, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify(paymentData),
+      // });
 
       Alert.alert("Success", "Total amount and payments saved successfully.");
     } catch (err) {
-      Alert.alert("Error", "Failed to save total amount. Please try again.");
-      console.error("Error saving total amount:", err);
+      Alert.alert("Error", "Failed to save payment data. Please try again.");
+      console.error("Error saving payment data:", err);
     } finally {
       setIsSaving(false);
     }
   };
+  const TotalPayAmountDisplay = () => {
+    // Calculate the sum of all pay amounts
+    const totalPayAmount = receiptData.reduce(
+      (sum, item) => sum + (item.payAmount || 0),
+      0
+    );
 
-  const handleBackPress = () => {
-    Alert.alert("Confirm", "Are you sure you want to go back?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Yes",
-        onPress: () => {
-          if (router.canGoBack()) {
-            navigation.goBack();
-          } else {
-            router.replace("/"); // Redirect to a default route
-          }
-        },
-      },
-    ]);
-  };
+    // Count receipts with payment
+    const receiptsWithPayment = receiptData.filter(
+      (item) => item.payAmount !== undefined && item.payAmount !== null
+    ).length;
 
-  const logOut = async () => {
-    Alert.alert("Confirm", "Are you sure you want to log out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Yes",
-        onPress: async () => {
-          // await authUtils.removeUserToken();
-          router.replace("/"); // Reset the route
-        },
-      },
-    ]);
+    return (
+      <View style={styles.totalPayAmountContainer}>
+        <Text style={styles.totalPayAmountLabel}>
+          Sum of Pay Amounts ({receiptsWithPayment} items)
+        </Text>
+        <Text style={styles.totalPayAmountValue}>
+          {totalPayAmount.toLocaleString()}
+        </Text>
+      </View>
+    );
   };
 
   const renderEmptyList = () => (
@@ -427,6 +508,7 @@ const MFReceiptList: React.FC = () => {
 
         {/* Remove SafeAreaView around the footer */}
         <View style={styles.footerContainer}>
+          <TotalPayAmountDisplay />
           <View style={styles.totalAmountContainer}>
             <Text style={styles.totalAmountTitle}>Total Amount</Text>
             <View style={styles.inputContainer}>
@@ -477,7 +559,7 @@ const MFReceiptList: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA", // Fixed typo in color
+    backgroundColor: "#F8F1F", // Fixed typo in color
   },
   keyboardAvoidingContainer: {
     flex: 1,
@@ -515,9 +597,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#6ca1ff",
     marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowColor: "black",
+    shadowOffset: { width: 1, height: 2 },
+    shadowOpacity: 2,
     shadowRadius: 2,
     elevation: 2,
     overflow: "hidden",
@@ -715,6 +797,31 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 14,
     color: "#FF3B30",
+  },
+  totalPayAmountContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+    marginBottom: 10,
+  },
+  totalPayAmountLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#666",
+  },
+  totalPayAmountValue: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#4D90FE",
+  },
+  amountMismatch: {
+    color: "#FF3B30",
+  },
+  amountMatch: {
+    color: "#34C759",
   },
 });
 

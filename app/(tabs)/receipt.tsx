@@ -44,7 +44,7 @@ export default function MFReceipt() {
 
   // State for form inputs
   const [center, setCenter] = useState("");
-  const [grp, setGroup] = useState<number | null>(null);
+  const [grp, setGroup] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState("");
 
   // State for user data
