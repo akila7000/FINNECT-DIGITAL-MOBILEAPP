@@ -619,7 +619,6 @@ const styles = StyleSheet.create({
     padding: 14,
     borderTopColor: "#E0E0E0",
     borderTopWidth: 1,
- 
     zIndex: 2,
   },
   totalAmountContainer: {
