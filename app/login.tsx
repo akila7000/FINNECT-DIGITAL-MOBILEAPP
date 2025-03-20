@@ -1,3 +1,83 @@
+
+//javascript
+/**
+ * Login Component Documentation
+ * 
+ * Overview:
+ * The `Login` component is a React Native screen that allows users to log in to the application. 
+ * It includes form fields for username/email and password, handles input validation, and integrates 
+ * with an API to authenticate users. The component also manages error states, network availability, 
+ * and user feedback during the login process.
+ * 
+ * Key Features:
+ * 1. **Input Validation**: Validates the username and password fields to ensure they meet the required criteria.
+ * 2. **API Integration**: Communicates with a backend API to authenticate users and handle login responses.
+ * 3. **Error Handling**: Displays appropriate error messages for invalid inputs, network issues, or server errors.
+ * 4. **Password Visibility Toggle**: Allows users to toggle the visibility of their password.
+ * 5. **Network Retry**: Provides an option to retry the login process if a network error occurs.
+ * 6. **Forgot Password**: Includes a placeholder for a "Forgot Password" feature.
+ * 7. **Loading State**: Displays a loading indicator during API requests.
+ * 8. **Persistence**: Stores user session data (e.g., session cookie, username) in AsyncStorage for persistence.
+ * 
+ * State Management:
+ * - `username`: Stores the value entered in the username/email field.
+ * - `password`: Stores the value entered in the password field.
+ * - `errorMessage`: Stores any error messages to be displayed to the user.
+ * - `apiStatus`: Tracks the status of the API request (idle, loading, success, error).
+ * - `networkAvailable`: Tracks whether the device has an active network connection.
+ * - `showPassword`: Toggles the visibility of the password field.
+ * - `loggedUser`: Stores the name of the logged-in user.
+ * - `errors`: Stores validation errors for the username and password fields.
+ * 
+ * Methods:
+ * - `validateInputs()`: Validates the username and password fields and updates the `errors` state.
+ * - `handleLogin()`: Handles the login process, including API communication, error handling, and navigation.
+ * - `handleRetry()`: Resets the network error state and allows the user to retry the login process.
+ * - `handleForgotPassword()`: Displays an alert for the "Forgot Password" feature (placeholder implementation).
+ * - `togglePasswordVisibility()`: Toggles the visibility of the password field.
+ * 
+ * UI Components:
+ * - **SafeAreaView**: Ensures the content is displayed within the safe area boundaries of the device.
+ * - **KeyboardAvoidingView**: Adjusts the view to avoid the keyboard when it is displayed.
+ * - **TextInput**: Input fields for username/email and password.
+ * - **TouchableOpacity**: Buttons for login, retry, and forgot password.
+ * - **ActivityIndicator**: Loading spinner displayed during API requests.
+ * - **Alert**: Displays error messages and alerts to the user.
+ * - **Image**: Displays the application logo.
+ * - **Icons**: Uses icons from `@expo/vector-icons` for error messages, password visibility, and buttons.
+ * 
+ * Styling:
+ * - The component uses a `StyleSheet` to define styles for all UI elements, ensuring a consistent look and feel.
+ * - Styles include colors, padding, margins, and borders for inputs, buttons, and error messages.
+ * 
+ * Navigation:
+ * - On successful login, the user is navigated to the `/receipt` screen using the `useRouter` hook from `expo-router`.
+ * 
+ * Dependencies:
+ * - `react-native`: Core components for building the UI.
+ * - `@react-native-async-storage/async-storage`: For persisting user session data.
+ * - `expo-router`: For navigation between screens.
+ * - `@expo/vector-icons`: For displaying icons in the UI.
+ * 
+ * Environment Variables:
+ * - `API_BASE_URL`: The base URL for the API is fetched from `process.env.EXPO_PUBLIC_API_BASE_URL`.
+ * 
+ * Usage:
+ * - Import and use the `Login` component in your navigation stack to allow users to log in to the application.
+ * - Ensure the API endpoint `/auth/login` is correctly configured to handle login requests.
+ * 
+ * Example:
+ * ```jsx
+ * <Login />
+ * ```
+ * 
+ * Notes:
+ * - The "Forgot Password" feature is currently a placeholder and requires implementation.
+ * - The component assumes the API returns user data in a specific format. Adjust the logic if the API response structure differs.
+ * - Ensure proper error handling for network requests, including timeouts and server errors.
+ */
+
+
 import React, { useState } from "react";
 import {
   View,
@@ -24,7 +104,6 @@ import {
 } from "@expo/vector-icons";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
-
 
 const Login = () => {
   const router = useRouter();
@@ -96,7 +175,6 @@ const Login = () => {
 
       const data = await response.json(); // Parse response after clearing timeout
 
-  
       if (response.ok) {
         // Check if the server returned valid user data
         if (Array.isArray(data) && data.length > 0) {
@@ -113,12 +191,10 @@ const Login = () => {
             // Store the session cookie in AsyncStorage
             await AsyncStorage.setItem("sessionCookie", setCookie);
           }
-
           // Also store the username in AsyncStorage for persistence
           await AsyncStorage.setItem("userData", fullName);
         }
 
-        console.log(response, "Response");
         if (data) {
           // Store user session
           await AsyncStorage.setItem("userData", JSON.stringify(data));

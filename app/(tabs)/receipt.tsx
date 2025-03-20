@@ -201,13 +201,11 @@ export default function MFReceipt() {
         label: center.Description,
         value: center.CenterID,
       }));
-
       // If you want to get the first center's CenterID
       const centerId = mappedCenters.length > 0 ? mappedCenters[0].value : null;
 
       setCenterID(centerId);
-      // console.log("Center ID", centerId);
-
+      
       setCenters(mappedCenters);
     } catch (error) {
       console.error("Failed to fetch centers:", error);
@@ -232,9 +230,6 @@ export default function MFReceipt() {
       }
 
       const data = await response.json();
-      // console.log("Raw API Response:", data); // 🔍 Check what API returns
-
-      
 
       const mappedGroups = data.map((grp: any) => ({
         label: grp.Description,
@@ -258,7 +253,7 @@ export default function MFReceipt() {
       fetchCenters(loanBranchId);
     }
   }, [loanBranchId]);
- 
+
   // Handle form submission
   const handleSubmit = () => {
     const newErrors: { center?: string; search?: string; grp?: string } = {};
