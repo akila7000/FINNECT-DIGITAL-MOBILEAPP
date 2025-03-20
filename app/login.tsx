@@ -96,7 +96,7 @@ const Login = () => {
 
       const data = await response.json(); // Parse response after clearing timeout
 
-      console.log(data); //
+  
       if (response.ok) {
         // Check if the server returned valid user data
         if (Array.isArray(data) && data.length > 0) {
