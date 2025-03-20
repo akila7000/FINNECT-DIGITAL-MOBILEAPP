@@ -1,63 +1,58 @@
 import { Tabs, useRouter } from "expo-router";
 import React from "react";
 import { Platform, Text, TouchableOpacity, Alert } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
-
 
 export default function TabLayout() {
   const router = useRouter();
 
   // Logout function
   const handleLogout = async () => {
-    Alert.alert(
-      "Logout",
-      "Are you sure you want to logout?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Logout",
-          onPress: async () => {
-            try {
-              // Create an AbortController for timeout handling
-              const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 5000); // 5-second timeout
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        onPress: async () => {
+          try {
+            // Create an AbortController for timeout handling
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5-second timeout
 
-              // Call the logout API
-              const response = await fetch(`${API_BASE_URL}/auth/logout`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({}),
-                credentials: "include", // Ensures cookies (session) are sent
-                signal: controller.signal, // Timeout handling
-              });
+            // Call the logout API
+            const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({}),
+              credentials: "include", // Ensures cookies (session) are sent
+              signal: controller.signal, // Timeout handling
+            });
 
-              // Clear the timeout
-              clearTimeout(timeoutId);
+            // Clear the timeout
+            clearTimeout(timeoutId);
 
-              if (!response.ok) {
-                throw new Error("Logout failed");
-              }
-
-              // Clear user data from AsyncStorage
-              await AsyncStorage.removeItem("userData");
-              await AsyncStorage.removeItem("userName");
-
-              // Redirect to the home screen
-              router.replace("/");
-            } catch (error) {
-              console.error("Logout error:", error);
-              Alert.alert("Error", "Failed to logout. Please try again.");
+            if (!response.ok) {
+              throw new Error("Logout failed");
             }
-          },
+
+            // Clear user data from AsyncStorage
+            await AsyncStorage.removeItem("userData");
+            await AsyncStorage.removeItem("userName");
+
+            // Redirect to the home screen
+            router.replace("/");
+          } catch (error) {
+            console.error("Logout error:", error);
+            Alert.alert("Error", "Failed to logout. Please try again.");
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   // Logout button component
@@ -73,7 +68,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: "#4D911FE",
         tabBarInactiveTintColor: "gray",
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 9,
           fontWeight: "500",
         },
         tabBarStyle: {
@@ -81,7 +76,7 @@ export default function TabLayout() {
           paddingBottom: Platform.OS === "ios" ? 30 : 10,
           paddingTop: 5,
           backgroundColor: "white",
-          justifyContent:"space-between",
+          justifyContent: "space-between",
 
           borderTopWidth: 1,
         },
@@ -123,6 +118,30 @@ export default function TabLayout() {
             <Ionicons name="list-outline" size={size} color={color} />
           ),
           headerTitle: "Your Receipts",
+        }}
+      />
+      <Tabs.Screen
+        name="cancel-receipt"
+        options={{
+          title: "Cancel Receipt",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="file-cancel-outline"
+              size={size}
+              color={color}
+            />
+          ),
+          headerTitle: "Cancel Receipt",
+        }}
+      />
+      <Tabs.Screen
+        name="cancel-receipt-list"
+        options={{
+          title: "Cancel Receipt List",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="receipt-outline" size={size} color={color} />
+          ),
+          headerTitle: "Cancel Receipt",
         }}
       />
     </Tabs>

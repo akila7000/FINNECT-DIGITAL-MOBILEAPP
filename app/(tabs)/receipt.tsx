@@ -48,7 +48,7 @@ export default function MFReceipt() {
   const [searchQuery, setSearchQuery] = useState("");
 
   // State for user data
-  const [userRole, setUserRole] = useState("");
+
   const [userId, setUserId] = useState("");
 
   // State for loading indicators
@@ -79,7 +79,6 @@ export default function MFReceipt() {
   const [grpId, setGrpID] = useState();
   // Router and navigation
   const router = useRouter();
-
 
   // Check if user is logged in
   useEffect(() => {
@@ -125,7 +124,6 @@ export default function MFReceipt() {
             value: branch.BranchID,
           }));
         setCashierBranches(mappedBranches);
-
       } catch (error) {
         console.error("Failed to fetch cashier branches:", error);
         Alert.alert(
@@ -234,7 +232,9 @@ export default function MFReceipt() {
       }
 
       const data = await response.json();
-      console.log("Raw API Response:", data); // 🔍 Check what API returns
+      // console.log("Raw API Response:", data); // 🔍 Check what API returns
+
+      
 
       const mappedGroups = data.map((grp: any) => ({
         label: grp.Description,
@@ -258,7 +258,7 @@ export default function MFReceipt() {
       fetchCenters(loanBranchId);
     }
   }, [loanBranchId]);
-
+ 
   // Handle form submission
   const handleSubmit = () => {
     const newErrors: { center?: string; search?: string; grp?: string } = {};
@@ -364,6 +364,8 @@ export default function MFReceipt() {
       router.push({
         pathname: "/(tabs)/receipt-list",
         params: {
+          CenterID: center.toString(),
+          GroupID: grp.toString(),
           receiptData: JSON.stringify(data),
           branchID: loanBranchId,
           collectDate: new Date().toISOString(),
