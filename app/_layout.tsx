@@ -1,4 +1,4 @@
-// App
+// Root
 
 import { Text } from "react-native";
 import { Stack } from "expo-router";
