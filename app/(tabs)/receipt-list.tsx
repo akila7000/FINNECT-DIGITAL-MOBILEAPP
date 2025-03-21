@@ -22,6 +22,7 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 // Define types
 type ReceiptItem = {
   loanID: number;
+  id:number;
   LoanNo: any;
   Client_Name: string;
   GroupName: string;
@@ -195,7 +196,7 @@ const MFReceiptList: React.FC = () => {
         setReceiptData(parsedData);
         setIsLoading(false);
       } catch (error) {
-        console.error("Failed to parse receipt data:", error);
+        // console.error("Failed to parse receipt data:", error);
         setError("Failed to parse receipt data. Please try again.");
         setIsLoading(false);
       }
@@ -578,7 +579,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
-    padding: 14,
+    padding: 12,
   },
   receiptId: {
     fontSize: 14,

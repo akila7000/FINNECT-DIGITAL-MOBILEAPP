@@ -1,7 +1,11 @@
 import { Tabs, useRouter } from "expo-router";
 import React from "react";
 import { Platform, Text, TouchableOpacity, Alert } from "react-native";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  Ionicons,
+  MaterialCommunityIcons,
+  MaterialIcons,
+} from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
@@ -103,45 +107,41 @@ export default function TabLayout() {
       <Tabs.Screen
         name="receipt"
         options={{
-          title: "Receipt",
+          title: "Find Payment Recipients",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="receipt-outline" size={size} color={color} />
+            <MaterialCommunityIcons name="file-find-outline" size={size} color={color} />
           ),
-          headerTitle: "Add Receipt",
+          headerTitle: "Find Payment Recipients",
         }}
       />
       <Tabs.Screen
         name="receipt-list"
         options={{
-          title: "Receipt List",
+          title: "Loan Receipts",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="list-outline" size={size} color={color} />
           ),
-          headerTitle: "Your Receipts",
+          headerTitle: "Loan Receipts",
         }}
       />
       <Tabs.Screen
-        name="cancel-receipt"
+        name="get-receipt-details"
         options={{
-          title: "Cancel Receipt",
+          title: "Get Receipt Details",
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons
-              name="file-cancel-outline"
-              size={size}
-              color={color}
-            />
+            <MaterialCommunityIcons name="file" size={size} color={color} />
           ),
-          headerTitle: "Cancel Receipt",
+          headerTitle: "Get Receipt Details",
         }}
       />
       <Tabs.Screen
-        name="cancel-receipt-list"
+        name="receipt-details"
         options={{
-          title: "Cancel Receipt List",
+          title: " Receipt Details",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="receipt-outline" size={size} color={color} />
+            <MaterialIcons name="receipt-long" size={size} color={color} />
           ),
-          headerTitle: "Cancel Receipt",
+          headerTitle: "Receipt Details",
         }}
       />
     </Tabs>

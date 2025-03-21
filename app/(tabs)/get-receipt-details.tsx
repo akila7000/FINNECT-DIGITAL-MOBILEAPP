@@ -34,11 +34,10 @@ interface Branch {
   BranchID?: string;
 }
 
-export default function MFCancelReceipt() {
+export default function MFReceiptDetails() {
   const [loanBranches, setLoanBranches] = useState<DropdownItem[]>([]);
   const [centers, setCenters] = useState<DropdownItem[]>([]);
   const [center, setCenter] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [userId, setUserId] = useState("");
@@ -141,9 +140,6 @@ export default function MFCancelReceipt() {
     setErrors({});
 
     // Log loanBranchId and centerId
-    console.log("Loan Branch ID:", loanBranchId);
-    console.log("Center ID:", centerId);
-    console.log("Date ID:", date);
 
     fetchReceiptData();
   };
@@ -178,33 +174,36 @@ export default function MFCancelReceipt() {
     }
     closeDropdown();
   };
+  useEffect(() => {
+    console.log("CenterId", center);
+    console.log("date", date);
+  });
 
   const fetchReceiptData = async () => {
     setApiStatus("loading");
     try {
-      const response = await fetch(`${API_BASE_URL}/MFReceipt/getLoanDetails`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          CenterID: center.toString(),
-          collectDate: date.toISOString(),
-
-          // searchQuery: searchQuery || "",
-        }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/MFReceipt/GetReceiptDetails`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            CenterID: center,
+            receiptDate: date,
+          }),
+        }
+      );
       if (!response.ok)
         throw new Error(`HTTP error! Status: ${response.status}`);
       const data = await response.json();
+      // console.log("Data", data);
       setApiStatus("success");
       router.push({
-        pathname: "/(tabs)/cancel-receipt-list",
+        pathname: "/(tabs)/receipt-details",
         params: {
-          Date: date,
-          CenterID: center.toString(),
-          LoanBranchId: loanBranchId,
+          CenterID: center,
+          receiptDate: date.toISOString(), // Convert date to ISO string
           receiptData: JSON.stringify(data),
-          branchID: loanBranchId,
-          collectDate: date.toISOString(),
         },
       });
     } catch (error) {
