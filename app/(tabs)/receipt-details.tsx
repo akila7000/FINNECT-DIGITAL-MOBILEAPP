@@ -13,7 +13,7 @@ import {
   Platform,
   StyleSheet,
 } from "react-native";
-import { FontAwesome } from "@expo/vector-icons";
+import { FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
 
@@ -54,11 +54,7 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
   });
 
   return (
-    <TouchableOpacity
-      style={styles.receiptItem}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
+    <TouchableOpacity style={styles.receiptItem} activeOpacity={0.7}>
       <View style={styles.receiptHeader}>
         <View style={styles.receiptHeaderLeft}>
           <Text style={styles.receiptId}>Loan No: {item.LoanNo}</Text>
@@ -72,43 +68,54 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
       </View>
 
       <View style={styles.receiptBody}>
-        <View style={styles.amountRow}>
-          <Text style={styles.amountLabel}>Amount:</Text>
-          <Text style={styles.amountValue}>{item.amount.toLocaleString()}</Text>
-        </View>
-
-        <View style={styles.amountRow}>
-          <Text style={styles.amountLabel}>Status:</Text>
-          <Text
-            style={[
-              styles.statusValue,
-              item.Status === "Pending"
-                ? {
-                    backgroundColor: "#FFA500",
-                    color: "white",
-                    paddingHorizontal: 8,
-                    paddingVertical: 4,
-                    borderRadius: 12,
-                  }
-                : null,
-            ]}
-          >
-            {item.Status}
-          </Text>
-        </View>
-
-        {item.payAmount !== undefined && (
-          <View style={styles.payAmountContainer}>
-            <Text style={styles.payAmountText}>
-              Pay Amount: {item.payAmount.toLocaleString()}
+        <View style={styles.infoContainer}>
+          <View style={styles.amountContainer}>
+            <Text style={styles.infoLabel}>Amount:</Text>
+            <Text style={styles.amountValue}>
+              {item.amount.toLocaleString()}
             </Text>
           </View>
-        )}
+
+          <View style={styles.statusContainer}>
+            <Text style={styles.infoLabel}>Status:</Text>
+            <View
+              style={[
+                styles.statusBadge,
+                item.Status === "Pending"
+                  ? styles.pendingBadge
+                  : styles.defaultBadge,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusText,
+                  item.Status === "Pending"
+                    ? styles.pendingText
+                    : styles.defaultText,
+                ]}
+              >
+                {item.Status}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Cancel Button */}
+        <TouchableOpacity
+          onPress={onPress}
+          style={styles.cancelButtonStyle}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons
+            name="archive-cancel-outline"
+            size={24}
+            color="#6B7280"
+          />
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
 };
-
 interface PayModalComponentProps {
   isVisible: boolean;
   onClose: () => void;
@@ -449,7 +456,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderBottomWidth: 1,
     borderBottomColor: "#EEF2FF",
-    padding: 10,
+    padding: 18,
     backgroundColor: "#F7F9FF",
   },
   receiptHeaderLeft: {
@@ -483,9 +490,16 @@ const styles = StyleSheet.create({
     color: "#4D90FE",
   },
   receiptBody: {
-    padding: 16,
+    padding: 18,
   },
+
   amountRow: {
+    flexDirection: "row", // Arrange items in a row
+    justifyContent: "space-between", // Space out items evenly
+    alignItems: "center", // Align items vertically
+    marginBottom: 12, // Add margin at the bottom
+  },
+  statusRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -697,6 +711,59 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#FF3B30",
     fontWeight: "500",
+  },
+  cancelButtonStyle: {
+    position: "absolute", // Make the button absolutely positioned
+    right: 2, // Adjust the left position as needed
+    bottom: 2, // Adjust the top position as needed
+    zIndex: 1, // Ensure the button is above other elements
+    padding:1
+  },
+  // Add these to your existing styles object
+  infoContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  amountContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  statusContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  infoLabel: {
+    fontSize: 15,
+    color: "#666",
+    marginRight: 5,
+  },
+  // amountValue: {
+  //   fontSize: 16,
+  //   fontWeight: '600',
+  //   color: '#333',
+  // },
+  statusBadge: {
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  pendingBadge: {
+    backgroundColor: "#FFA500",
+  },
+  defaultBadge: {
+    backgroundColor: "#EEF2FF",
+  },
+  statusText: {
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  pendingText: {
+    color: "white",
+  },
+  defaultText: {
+    color: "#4D90FE",
   },
 });
 
