@@ -77,7 +77,22 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
 
         <View style={styles.amountRow}>
           <Text style={styles.amountLabel}>Status:</Text>
-          <Text style={styles.statusValue}>{item.Status}</Text>
+          <Text
+            style={[
+              styles.statusValue,
+              item.Status === "Pending"
+                ? {
+                    backgroundColor: "#FFA500",
+                    color: "white",
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 12,
+                  }
+                : null,
+            ]}
+          >
+            {item.Status}
+          </Text>
         </View>
 
         {item.payAmount !== undefined && (
@@ -369,7 +384,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#DDE6FF",
+    borderColor: "#6ca1ff",
     marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },

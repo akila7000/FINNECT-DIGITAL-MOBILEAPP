@@ -195,7 +195,7 @@ const MFReceiptList: React.FC = () => {
         setReceiptData(parsedData);
         setIsLoading(false);
       } catch (error) {
-        console.error("Failed to parse receipt data:", error);
+        // console.error("Failed to parse receipt data:", error);
         setError("Failed to parse receipt data. Please try again.");
         setIsLoading(false);
       }
