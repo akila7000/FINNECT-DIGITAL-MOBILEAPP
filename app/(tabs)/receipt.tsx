@@ -343,7 +343,6 @@ export default function MFReceipt() {
         body: JSON.stringify({
           CenterID: center.toString(),
           GroupID: grp.toString(),
-
           searchQuery: searchQuery || "",
         }),
       });

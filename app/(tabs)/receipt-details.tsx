@@ -23,12 +23,12 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 type ReceiptItem = {
   loanID: number;
   LoanNo: any;
-  Client_Name: string;
-  GroupName: string;
-  Loan_Amount: number;
-  Rental_Amount: number;
+  CenterName: string;
+  Status: string;
+  logDate: string;
   payAmount?: number;
-  Total_Due: number;
+  amount: number;
+  ReceiptNo: string;
 };
 
 interface ReceiptItemComponentProps {
@@ -48,16 +48,24 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
   >
     <View style={styles.receiptHeader}>
       <Text style={styles.receiptId}>{item.LoanNo}</Text>
-      <Text style={styles.receiptName}>{item.Client_Name}</Text>
+      <Text style={styles.receiptId}>{item.ReceiptNo}</Text>
+      <Text style={styles.receiptId}>{item.ReceiptNo}</Text>
+      <Text style={styles.receiptId}>{item.logDate.split("T")[0]}</Text>
+      <Text style={styles.receiptName}>{item.CenterName}</Text>
     </View>
     <View style={styles.receiptBody}>
       <View style={styles.amountRow}>
-        <Text style={styles.amountLabel}>Rental Amount</Text>
-        <Text style={styles.rentalAmountValue}>{item.Rental_Amount}</Text>
+        <Text style={styles.amountLabel}> Amount</Text>
+
+        <Text style={styles.rentalAmountValue}>{item.amount}</Text>
       </View>
       <View style={styles.amountRow}>
         <Text style={styles.amountLabel}>Due Amount</Text>
-        <Text style={styles.dueAmountValue}>{item.Total_Due}</Text>
+        <Text style={styles.dueAmountValue}>{}</Text>
+      </View>
+      <View style={styles.amountRow}>
+        <Text style={styles.amountLabel}>Status</Text>
+        <Text style={styles.dueAmountValue}>{item.Status}</Text>
       </View>
       {item.payAmount !== undefined && (
         <View style={styles.payAmountContainer}>
@@ -109,7 +117,7 @@ const PayModalComponent: React.FC<PayModalComponentProps> = ({
 
         <Text style={styles.modalReceiptId}>
           Loan: {selectedReceipt ? selectedReceipt.LoanNo : ""} -{" "}
-          {selectedReceipt ? selectedReceipt.Client_Name : ""}
+          {selectedReceipt ? selectedReceipt.CenterName : ""}
         </Text>
 
         <TextInput
@@ -156,7 +164,7 @@ const MFReceiptList: React.FC = () => {
   // Get params from router
   const params = useLocalSearchParams();
   const { receiptData: receiptDataParam } = params;
-  const { branchID, collectDate, userBranchID, CenterID, GroupID } = params;
+  const { CenterID, dtoDate } = params;
 
   // State variables
   const [totalAmount, setTotalAmount] = useState<string>("0");
@@ -172,20 +180,16 @@ const MFReceiptList: React.FC = () => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isUpdatingPayment, setIsUpdatingPayment] = useState<boolean>(false);
   const [centerID, setCenterID] = useState(params.CenterID || 0);
-  const [groupID, setGroupID] = useState(params.GroupID || "");
+  const [date, setDTODate] = useState(params.dtoDate || 0);
 
   // Update centerID and groupID when params change
   useEffect(() => {
-    setCenterID(params.CenterID || 0);
-    setGroupID(params.GroupID || "");
+    setCenterID(CenterID);
+    setDTODate(dtoDate);
+    console.log("Fetching data on component", date, CenterID);
   }, [params.CenterID, params.GroupID]);
 
   // Fetch data on component mount or when centerID/groupID changes
-  useEffect(() => {
-    if (centerID && groupID) {
-      refreshData();
-    }
-  }, [centerID, groupID]);
 
   // Handle initial data fetch
   useEffect(() => {
@@ -195,222 +199,61 @@ const MFReceiptList: React.FC = () => {
         setReceiptData(parsedData);
         setIsLoading(false);
       } catch (error) {
-        // console.error("Failed to parse receipt data:", error);
+        console.error("Failed to parse receipt data:", error);
         setError("Failed to parse receipt data. Please try again.");
         setIsLoading(false);
       }
     } else {
-      refreshData(); // Fetch data from the API if no params are passed
+      // refreshData(); // Fetch data from the API if no params are passed
     }
   }, [receiptDataParam]);
 
+  console.log("V receiptDatasdskd", receiptData);
   // Refresh data function
-  const refreshData = async () => {
-    // setApiStatus("loading");
-    setIsRefreshing(true);
-    setIsLoading(true);
-    setError(null);
+  // const refreshData = async () => {
+  //   // setApiStatus("loading");
+  //   setIsRefreshing(true);
+  //   setIsLoading(true);
+  //   setError(null);
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/MFReceipt/getLoanDetails`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          CenterID: centerID,
-          GroupID: groupID,
-        }),
-      });
+  //   try {
+  //     const response = await fetch(
+  //       `${API_BASE_URL}/MFReceipt/GetReceiptDetails`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify({
+  //           clearImmediateenterID: CenterID,
+  //           receiptDate: date, //,
+  //         }),
+  //       }
+  //     );
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
+  //     if (!response.ok) {
+  //       throw new Error(`HTTP error! Status: ${response.status}`);
+  //     }
 
-      const data = await response.json();
-      // console.log(data);
+  //     // const data = await response.json();
+  //     // console.log(data);
 
-      setReceiptData(data);
-      // setApiStatus("success");
-    } catch (error) {
-      console.error("Failed to fetch receipt data:", error);
-      // setApiStatus("error");
-      setError("Failed to fetch receipt data. Please try again.");
-      Alert.alert("Error", "Failed to fetch receipt data. Please try again.");
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
+  //     // setReceiptData(data);
+  //     // setApiStatus("success");
+  //   } catch (error) {
+  //     console.error("Failed to fetch receipt data:", error);
+  //     // setApiStatus("error");
+  //     setError("Failed to fetch receipt data. Please try again.");
+  //     Alert.alert("Error", "Failed to fetch receipt data. Please try again.");
+  //   } finally {
+  //     setIsLoading(false);
+  //     setIsRefreshing(false);
+  //   }
+  // };
 
-  // Handle pay amount entry
-  const handlePayAmountEnter = async () => {
-    if (!selectedReceipt) return;
-    if (!payAmount || parseFloat(payAmount) <= 0) {
-      Alert.alert("Invalid Input", "Please enter a valid payment amount.");
-      return;
-    }
-    setIsUpdatingPayment(true);
-    // Validate payAmount
-    const paymentAmount = parseFloat(payAmount);
-    if (isNaN(paymentAmount) || paymentAmount <= 0) {
-      Alert.alert("Invalid Input", "Please enter a valid payment amount.");
-      return;
-    }
-
-    try {
-      // Update only the payAmount for the selected receipt
-      const updatedReceipts = receiptData.map((receipt) =>
-        receipt.loanID === selectedReceipt.loanID
-          ? {
-              ...receipt,
-              payAmount: paymentAmount, // Update payAmount only
-            }
-          : receipt
-      );
-
-      setReceiptData(updatedReceipts);
-      setPayModalVisible(false);
-      setPayAmount("");
-      setSelectedReceipt(null);
-      // Alert.alert("Success", "Payment amount updated successfully.");
-    } catch (err) {
-      Alert.alert(
-        "Error",
-        "Failed to update payment amount. Please try again."
-      );
-      console.error("Error updating payment:", err);
-    } finally {
-      setIsUpdatingPayment(false);
-    }
-  };
-
-  // Handle total amount change
-  const handleTotalAmountChange = (text: string) => {
-    const numericValue = text.replace(/[^0-9.]/g, "");
-    setTotalAmount(numericValue);
-  };
-  useEffect(() => {
-    refreshData();
-  }, [centerID, groupID, receiptDataParam]);
-
-  // Handle save
-  const handleSave = async () => {
-    if (!totalAmount || parseFloat(totalAmount) <= 0) {
-      Alert.alert("Invalid Input", "Please enter a valid total amount.");
-      return;
-    }
-
-    const receiptsWithPayments = receiptData.filter(
-      (item) => item.payAmount !== undefined && item.payAmount !== null
-    );
-
-    const totalPayAmount = receiptsWithPayments.reduce(
-      (sum, item) => sum + (item.payAmount || 0),
-      0
-    );
-
-    const enteredTotal = parseFloat(totalAmount);
-
-    if (receiptsWithPayments.length === 0) {
-      Alert.alert(
-        "No Payments",
-        "You haven't entered any payment amounts. Would you like to proceed anyway?",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Proceed",
-            onPress: () =>
-              processPayment(
-                enteredTotal,
-                totalPayAmount,
-                receiptsWithPayments
-              ),
-          },
-        ]
-      );
-      return;
-    }
-
-    if (totalPayAmount !== enteredTotal) {
-      Alert.alert(
-        "Amount Mismatch",
-        `The sum of payment amounts (${totalPayAmount}) doesn't match the entered total amount (${enteredTotal}). Would you like to proceed anyway?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Proceed",
-            onPress: () =>
-              processPayment(
-                enteredTotal,
-                totalPayAmount,
-                receiptsWithPayments
-              ),
-          },
-        ]
-      );
-      return;
-    }
-    setTotalAmount('');
-
-    processPayment(enteredTotal, totalPayAmount, receiptsWithPayments);
-  };
-
-  // Process payment
-  const processPayment = async (
-    enteredTotal: number,
-    totalPayAmount: number,
-    receiptsWithPayments: ReceiptItem[]
-  ) => {
-    setIsSaving(true);
-
-    try {
-      const paymentData = {
-        branchID: branchID,
-        collectDate: collectDate,
-        amount: enteredTotal,
-        receiptDetail: receiptsWithPayments.map((item) => ({
-          loanID: item.loanID,
-          amount: item.payAmount,
-          servingTransAmount: 0,
-          accountNo: "",
-        })),
-        userBranchID: userBranchID,
-      };
-
-      const response = await fetch(
-        `${API_BASE_URL}/MFReceipt/generateReceipt`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(paymentData),
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        Alert.alert(
-          "Error",
-          errorText || "An error occurred during processing"
-        );
-        return;
-      }
-
-      const responseData = await response.text();
-      Alert.alert(
-        "Success",
-        `Total amount of Receipt No ${responseData} and payments saved successfully.`
-      );
-      refreshData();
-    } catch (err: any) {
-      Alert.alert("Error", err.message || "An unexpected error occurred");
-      console.error("Error saving payment data:", err);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  // useEffect(() => {
+  //   refreshData();
+  // }, [centerID, receiptDataParam]);
 
   // Render empty list
   const renderEmptyList = () => (
@@ -437,7 +280,7 @@ const MFReceiptList: React.FC = () => {
               <Text style={styles.errorText}>{error}</Text>
               <TouchableOpacity
                 style={styles.retryButton}
-                onPress={refreshData}
+                // onPress={refreshData}
                 activeOpacity={0.7}
               >
                 <Text style={styles.retryButtonText}>Retry</Text>
@@ -467,7 +310,7 @@ const MFReceiptList: React.FC = () => {
               refreshControl={
                 <RefreshControl
                   refreshing={isRefreshing}
-                  onRefresh={refreshData}
+                  // onRefresh={refreshData}
                   colors={["#4D90FE"]}
                   tintColor="#4D90FE"
                 />
@@ -480,16 +323,17 @@ const MFReceiptList: React.FC = () => {
           <View style={styles.totalAmountContainer}>
             <Text style={styles.totalAmountTitle}>Total Amount</Text>
             <View style={styles.inputContainer}>
-              <TextInput
+              {/* <TextInput
                 style={styles.totalAmountInput}
                 placeholder="Enter total amount"
                 value={totalAmount}
                 onChangeText={handleTotalAmountChange}
                 editable={!isSaving}
                 keyboardType="decimal-pad"
-              />
+              /> */}
+              <Text> {totalAmount}</Text>
             </View>
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={[styles.saveButton, isSaving && styles.savingButton]}
               onPress={handleSave}
               disabled={isSaving}
@@ -500,12 +344,12 @@ const MFReceiptList: React.FC = () => {
               ) : (
                 <Text style={styles.saveButtonText}>Save</Text>
               )}
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
         </View>
       </KeyboardAvoidingView>
 
-      <PayModalComponent
+      {/* <PayModalComponent
         isVisible={isPayModalVisible}
         onClose={() => {
           if (!isUpdatingPayment) {
@@ -518,8 +362,7 @@ const MFReceiptList: React.FC = () => {
         payAmount={payAmount}
         setPayAmount={setPayAmount}
         isUpdatingPayment={isUpdatingPayment}
-        onPayAmountEnter={handlePayAmountEnter}
-      />
+      /> */}
     </SafeAreaView>
   );
 };
