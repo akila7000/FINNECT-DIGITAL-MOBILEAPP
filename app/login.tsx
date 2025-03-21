@@ -302,10 +302,11 @@ const Login = () => {
         <View style={styles.content}>
           <View style={styles.header}>
             <Image
-              source={require("../assets/images/icon.png")}
-              style={styles.logo}
-              resizeMode="contain"
+              source={require("../assets/images/finnet_logo.png")}
+              style={[styles.logo, { width: 250, height: 200 }]}
+              resizeMode="cover"
             />
+
             <Text style={styles.welcomeText}>Welcome Back {loggedUser}</Text>
             <Text style={styles.subText}>Please sign in to continue</Text>
           </View>
@@ -465,12 +466,11 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 30,
   },
   logo: {
-    width: 150,
-    height: 150,
-    marginBottom: 20,
+  
+    marginBottom:4,
   },
   welcomeText: {
     fontSize: 24,
