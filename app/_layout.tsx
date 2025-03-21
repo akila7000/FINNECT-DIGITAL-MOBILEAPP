@@ -18,6 +18,7 @@ export default function RootLayout() {
         options={{
           headerBackTitle: "Home",
           title: "",
+          headerTransparent: true,
           headerBackButtonDisplayMode: "generic",
         }}
       />
