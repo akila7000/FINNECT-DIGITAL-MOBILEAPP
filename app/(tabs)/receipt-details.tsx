@@ -21,6 +21,7 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 // Define types
 type ReceiptItem = {
+  id: number;
   loanID: number;
   LoanNo: any;
   CenterName: string;
@@ -29,6 +30,7 @@ type ReceiptItem = {
   payAmount?: number;
   amount: number;
   ReceiptNo: string;
+  CustName: string;
 };
 
 interface ReceiptItemComponentProps {
@@ -65,7 +67,7 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
         <View style={styles.receiptHeaderRight}>
           <Text style={styles.receiptDate}>{formattedDate}</Text>
           <Text style={styles.receiptTime}>{formattedTime}</Text>
-          <Text style={styles.receiptNumber}>#{item.ReceiptNo}</Text>
+          <Text style={styles.receiptNumber}>{item.CustName}</Text>
         </View>
       </View>
 
@@ -110,6 +112,7 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
 interface PayModalComponentProps {
   isVisible: boolean;
   onClose: () => void;
+  id: number;
   selectedReceipt: ReceiptItem | null;
   payAmount: string;
   setPayAmount: (value: string) => void;
@@ -120,6 +123,7 @@ interface PayModalComponentProps {
 // Pay Modal Component
 const PayModalComponent: React.FC<PayModalComponentProps> = ({
   isVisible,
+  id,
   onClose,
   selectedReceipt,
   payAmount,
@@ -136,7 +140,9 @@ const PayModalComponent: React.FC<PayModalComponentProps> = ({
     <View style={styles.modalOverlay}>
       <View style={styles.modalContent}>
         <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>Enter Pay Amount</Text>
+          <Text style={styles.modalTitle}>
+            Do you want to cancel the receipt?
+          </Text>
           {!isUpdatingPayment && (
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <FontAwesome name="close" size={20} color="#6B7280" />
@@ -148,15 +154,18 @@ const PayModalComponent: React.FC<PayModalComponentProps> = ({
           <View style={styles.receiptDetails}>
             <Text style={styles.modalReceiptId}>
               Loan: {selectedReceipt ? selectedReceipt.LoanNo : ""}
+              ID: {selectedReceipt ? selectedReceipt.id : ""}
             </Text>
-            <Text style={styles.modalCenterName}>
+            <Text style={styles.modalCenter_CustName}>
               {selectedReceipt ? selectedReceipt.CenterName : ""}
             </Text>
+            <Text>{selectedReceipt ? selectedReceipt.CustName : ""}</Text>
           </View>
 
+          <Text>Enter reason</Text>
           <TextInput
             style={styles.modalInput}
-            placeholder="Enter Pay Amount"
+            placeholder="Enter reason"
             autoCapitalize="none"
             value={payAmount}
             keyboardType="decimal-pad"
@@ -398,7 +407,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderBottomWidth: 1,
     borderBottomColor: "#EEF2FF",
-    padding: 16,
+    padding: 10,
     backgroundColor: "#F7F9FF",
   },
   receiptHeaderLeft: {
@@ -607,7 +616,7 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 4,
   },
-  modalCenterName: {
+  modalCenter_CustName: {
     fontSize: 14,
     color: "#666",
   },
