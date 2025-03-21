@@ -1,14 +1,13 @@
-
 //javascript
 /**
  * Login Component Documentation
- * 
+ *
  * Overview:
- * The `Login` component is a React Native screen that allows users to log in to the application. 
- * It includes form fields for username/email and password, handles input validation, and integrates 
- * with an API to authenticate users. The component also manages error states, network availability, 
+ * The `Login` component is a React Native screen that allows users to log in to the application.
+ * It includes form fields for username/email and password, handles input validation, and integrates
+ * with an API to authenticate users. The component also manages error states, network availability,
  * and user feedback during the login process.
- * 
+ *
  * Key Features:
  * 1. **Input Validation**: Validates the username and password fields to ensure they meet the required criteria.
  * 2. **API Integration**: Communicates with a backend API to authenticate users and handle login responses.
@@ -18,7 +17,7 @@
  * 6. **Forgot Password**: Includes a placeholder for a "Forgot Password" feature.
  * 7. **Loading State**: Displays a loading indicator during API requests.
  * 8. **Persistence**: Stores user session data (e.g., session cookie, username) in AsyncStorage for persistence.
- * 
+ *
  * State Management:
  * - `username`: Stores the value entered in the username/email field.
  * - `password`: Stores the value entered in the password field.
@@ -28,14 +27,14 @@
  * - `showPassword`: Toggles the visibility of the password field.
  * - `loggedUser`: Stores the name of the logged-in user.
  * - `errors`: Stores validation errors for the username and password fields.
- * 
+ *
  * Methods:
  * - `validateInputs()`: Validates the username and password fields and updates the `errors` state.
  * - `handleLogin()`: Handles the login process, including API communication, error handling, and navigation.
  * - `handleRetry()`: Resets the network error state and allows the user to retry the login process.
  * - `handleForgotPassword()`: Displays an alert for the "Forgot Password" feature (placeholder implementation).
  * - `togglePasswordVisibility()`: Toggles the visibility of the password field.
- * 
+ *
  * UI Components:
  * - **SafeAreaView**: Ensures the content is displayed within the safe area boundaries of the device.
  * - **KeyboardAvoidingView**: Adjusts the view to avoid the keyboard when it is displayed.
@@ -45,38 +44,37 @@
  * - **Alert**: Displays error messages and alerts to the user.
  * - **Image**: Displays the application logo.
  * - **Icons**: Uses icons from `@expo/vector-icons` for error messages, password visibility, and buttons.
- * 
+ *
  * Styling:
  * - The component uses a `StyleSheet` to define styles for all UI elements, ensuring a consistent look and feel.
  * - Styles include colors, padding, margins, and borders for inputs, buttons, and error messages.
- * 
+ *
  * Navigation:
  * - On successful login, the user is navigated to the `/receipt` screen using the `useRouter` hook from `expo-router`.
- * 
+ *
  * Dependencies:
  * - `react-native`: Core components for building the UI.
  * - `@react-native-async-storage/async-storage`: For persisting user session data.
  * - `expo-router`: For navigation between screens.
  * - `@expo/vector-icons`: For displaying icons in the UI.
- * 
+ *
  * Environment Variables:
  * - `API_BASE_URL`: The base URL for the API is fetched from `process.env.EXPO_PUBLIC_API_BASE_URL`.
- * 
+ *
  * Usage:
  * - Import and use the `Login` component in your navigation stack to allow users to log in to the application.
  * - Ensure the API endpoint `/auth/login` is correctly configured to handle login requests.
- * 
+ *
  * Example:
  * ```jsx
  * <Login />
  * ```
- * 
+ *
  * Notes:
  * - The "Forgot Password" feature is currently a placeholder and requires implementation.
  * - The component assumes the API returns user data in a specific format. Adjust the logic if the API response structure differs.
  * - Ensure proper error handling for network requests, including timeouts and server errors.
  */
-
 
 import React, { useState } from "react";
 import {
@@ -95,7 +93,6 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-
 import {
   FontAwesome,
   MaterialIcons,
@@ -436,6 +433,17 @@ const Login = () => {
               </>
             )}
           </TouchableOpacity>
+
+          <View style={styles.footer}>
+            <TouchableOpacity style={styles.poweredByContainer}>
+              <Text style={styles.poweredByText}>Powered By</Text>
+              <Image
+                source={require("../assets/images/pcsLogo.jpeg")}
+                style={styles.poweredByLogo}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -596,6 +604,24 @@ const styles = StyleSheet.create({
     color: "#3B82F6",
     fontSize: 14,
     fontWeight: "500",
+  },
+  footer: {
+    marginTop: "auto",
+    alignItems: "center",
+    paddingBottom: 20,
+  },
+  poweredByContainer: {
+    alignItems: "center",
+    marginTop: 30,
+  },
+  poweredByText: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 8,
+  },
+  poweredByLogo: {
+    width: 100,
+    height: 40,
   },
 });
 

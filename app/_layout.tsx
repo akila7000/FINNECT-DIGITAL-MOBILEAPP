@@ -4,13 +4,24 @@ import { Text } from "react-native";
 import { Redirect, Stack } from "expo-router";
 
 export default function RootLayout() {
-
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        headerBackTitle: " ", // This will hide the "index" text but keep the back button
+      }}
+    >
       <Stack.Screen name="index" options={{ headerShown: false }} />
       {/* <Stack.Screen name="" options={{ headerShown: false }} /> */}
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-
+      <Stack.Screen
+        name="login"
+        options={{
+          headerBackTitle: "Home",
+          title: "",
+          headerBackButtonDisplayMode: "generic",
+        }}
+      />
+      :
     </Stack>
   );
 }
