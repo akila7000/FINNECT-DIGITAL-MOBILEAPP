@@ -40,43 +40,57 @@ interface ReceiptItemComponentProps {
 const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
   item,
   onPress,
-}) => (
-  <TouchableOpacity
-    style={styles.receiptItem}
-    onPress={onPress}
-    activeOpacity={0.7}
-  >
-    <View style={styles.receiptHeader}>
-      <Text style={styles.receiptId}>{item.LoanNo}</Text>
-      <Text style={styles.receiptId}>{item.ReceiptNo}</Text>
-      <Text style={styles.receiptId}>{item.ReceiptNo}</Text>
-      <Text style={styles.receiptId}>{item.logDate.split("T")[0]}</Text>
-      <Text style={styles.receiptName}>{item.CenterName}</Text>
-    </View>
-    <View style={styles.receiptBody}>
-      <View style={styles.amountRow}>
-        <Text style={styles.amountLabel}> Amount</Text>
+}) => {
+  // Format date and time from logDate
+  const logDate = new Date(item.logDate);
+  const formattedDate = logDate.toISOString().split("T")[0];
+  const formattedTime = logDate.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
 
-        <Text style={styles.rentalAmountValue}>{item.amount}</Text>
-      </View>
-      <View style={styles.amountRow}>
-        <Text style={styles.amountLabel}>Due Amount</Text>
-        <Text style={styles.dueAmountValue}>{}</Text>
-      </View>
-      <View style={styles.amountRow}>
-        <Text style={styles.amountLabel}>Status</Text>
-        <Text style={styles.dueAmountValue}>{item.Status}</Text>
-      </View>
-      {item.payAmount !== undefined && (
-        <View style={styles.payAmountContainer}>
-          <Text style={styles.payAmountText}>
-            Pay Amount - {item.payAmount.toLocaleString()}
-          </Text>
+  return (
+    <TouchableOpacity
+      style={styles.receiptItem}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={styles.receiptHeader}>
+        <View style={styles.receiptHeaderLeft}>
+          <Text style={styles.receiptId}>Loan No: {item.LoanNo}</Text>
+          <Text style={styles.receiptName}>{item.CenterName}</Text>
         </View>
-      )}
-    </View>
-  </TouchableOpacity>
-);
+        <View style={styles.receiptHeaderRight}>
+          <Text style={styles.receiptDate}>{formattedDate}</Text>
+          <Text style={styles.receiptTime}>{formattedTime}</Text>
+          <Text style={styles.receiptNumber}>#{item.ReceiptNo}</Text>
+        </View>
+      </View>
+
+      <View style={styles.receiptBody}>
+        <View style={styles.amountRow}>
+          <Text style={styles.amountLabel}>Amount:</Text>
+          <Text style={styles.amountValue}>{item.amount.toLocaleString()}</Text>
+        </View>
+
+        <View style={styles.amountRow}>
+          <Text style={styles.amountLabel}>Status:</Text>
+          <Text style={styles.statusValue}>{item.Status}</Text>
+        </View>
+
+        {item.payAmount !== undefined && (
+          <View style={styles.payAmountContainer}>
+            <Text style={styles.payAmountText}>
+              Pay Amount: {item.payAmount.toLocaleString()}
+            </Text>
+          </View>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 interface PayModalComponentProps {
   isVisible: boolean;
@@ -109,52 +123,58 @@ const PayModalComponent: React.FC<PayModalComponentProps> = ({
         <View style={styles.modalHeader}>
           <Text style={styles.modalTitle}>Enter Pay Amount</Text>
           {!isUpdatingPayment && (
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <FontAwesome name="close" size={20} color="#6B7280" />
             </TouchableOpacity>
           )}
         </View>
 
-        <Text style={styles.modalReceiptId}>
-          Loan: {selectedReceipt ? selectedReceipt.LoanNo : ""} -{" "}
-          {selectedReceipt ? selectedReceipt.CenterName : ""}
-        </Text>
+        <View style={styles.modalBody}>
+          <View style={styles.receiptDetails}>
+            <Text style={styles.modalReceiptId}>
+              Loan: {selectedReceipt ? selectedReceipt.LoanNo : ""}
+            </Text>
+            <Text style={styles.modalCenterName}>
+              {selectedReceipt ? selectedReceipt.CenterName : ""}
+            </Text>
+          </View>
 
-        <TextInput
-          style={styles.modalInput}
-          placeholder="Enter Pay Amount"
-          autoCapitalize="none"
-          value={payAmount}
-          keyboardType="decimal-pad"
-          onChangeText={(text) => setPayAmount(text.replace(/[^0-9.]/g, ""))}
-          editable={!isUpdatingPayment}
-        />
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Enter Pay Amount"
+            autoCapitalize="none"
+            value={payAmount}
+            keyboardType="decimal-pad"
+            onChangeText={(text) => setPayAmount(text.replace(/[^0-9.]/g, ""))}
+            editable={!isUpdatingPayment}
+          />
 
-        <TouchableOpacity
-          style={[
-            styles.enterButton,
-            isUpdatingPayment && styles.updatingButton,
-          ]}
-          onPress={onPayAmountEnter}
-          disabled={isUpdatingPayment}
-          activeOpacity={0.7}
-        >
-          {isUpdatingPayment ? (
-            <ActivityIndicator size="small" color="white" />
-          ) : (
-            <Text style={styles.enterButtonText}>Enter</Text>
-          )}
-        </TouchableOpacity>
-
-        {!isUpdatingPayment && (
           <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={onClose}
+            style={[
+              styles.enterButton,
+              isUpdatingPayment && styles.updatingButton,
+            ]}
+            onPress={onPayAmountEnter}
+            disabled={isUpdatingPayment}
             activeOpacity={0.7}
           >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
+            {isUpdatingPayment ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <Text style={styles.enterButtonText}>Enter</Text>
+            )}
           </TouchableOpacity>
-        )}
+
+          {!isUpdatingPayment && (
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={onClose}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </View>
   </Modal>
@@ -177,19 +197,25 @@ const MFReceiptList: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isUpdatingPayment, setIsUpdatingPayment] = useState<boolean>(false);
   const [centerID, setCenterID] = useState(params.CenterID || 0);
   const [date, setDTODate] = useState(params.dtoDate || 0);
 
-  // Update centerID and groupID when params change
+  // Handle pay amount enter
+  const handlePayAmountEnter = () => {
+    // Add your payment logic here
+    console.log(
+      `Entering payment of ${payAmount} for loan ${selectedReceipt?.LoanNo}`
+    );
+    setPayModalVisible(false);
+  };
+
+  // Update centerID and date when params change
   useEffect(() => {
     setCenterID(CenterID);
     setDTODate(dtoDate);
     console.log("Fetching data on component", date, CenterID);
-  }, [params.CenterID, params.GroupID]);
-
-  // Fetch data on component mount or when centerID/groupID changes
+  }, [params.CenterID, params.dtoDate]);
 
   // Handle initial data fetch
   useEffect(() => {
@@ -197,6 +223,14 @@ const MFReceiptList: React.FC = () => {
       try {
         const parsedData = JSON.parse(receiptDataParam as string);
         setReceiptData(parsedData);
+
+        // Calculate total amount
+        const total = parsedData.reduce(
+          (sum: number, item: ReceiptItem) => sum + item.amount,
+          0
+        );
+        setTotalAmount(total.toLocaleString());
+
         setIsLoading(false);
       } catch (error) {
         console.error("Failed to parse receipt data:", error);
@@ -204,61 +238,21 @@ const MFReceiptList: React.FC = () => {
         setIsLoading(false);
       }
     } else {
-      // refreshData(); // Fetch data from the API if no params are passed
+      // If we need to fetch data from API later
+      setIsLoading(false);
     }
   }, [receiptDataParam]);
-
-  console.log("V receiptDatasdskd", receiptData);
-  // Refresh data function
-  // const refreshData = async () => {
-  //   // setApiStatus("loading");
-  //   setIsRefreshing(true);
-  //   setIsLoading(true);
-  //   setError(null);
-
-  //   try {
-  //     const response = await fetch(
-  //       `${API_BASE_URL}/MFReceipt/GetReceiptDetails`,
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //         body: JSON.stringify({
-  //           clearImmediateenterID: CenterID,
-  //           receiptDate: date, //,
-  //         }),
-  //       }
-  //     );
-
-  //     if (!response.ok) {
-  //       throw new Error(`HTTP error! Status: ${response.status}`);
-  //     }
-
-  //     // const data = await response.json();
-  //     // console.log(data);
-
-  //     // setReceiptData(data);
-  //     // setApiStatus("success");
-  //   } catch (error) {
-  //     console.error("Failed to fetch receipt data:", error);
-  //     // setApiStatus("error");
-  //     setError("Failed to fetch receipt data. Please try again.");
-  //     Alert.alert("Error", "Failed to fetch receipt data. Please try again.");
-  //   } finally {
-  //     setIsLoading(false);
-  //     setIsRefreshing(false);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   refreshData();
-  // }, [centerID, receiptDataParam]);
 
   // Render empty list
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>No receipt data available.</Text>
+      <Text style={styles.emptyText}>No receipt data available</Text>
+      <TouchableOpacity
+        style={styles.refreshButton}
+        onPress={() => console.log("Refresh")}
+      >
+        <Text style={styles.refreshButtonText}>Refresh</Text>
+      </TouchableOpacity>
     </View>
   );
 
@@ -269,6 +263,7 @@ const MFReceiptList: React.FC = () => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 20}
       >
+        {/* Main Content */}
         <View style={styles.contentContainer}>
           {isLoading ? (
             <View style={styles.loadingContainer}>
@@ -277,10 +272,15 @@ const MFReceiptList: React.FC = () => {
             </View>
           ) : error ? (
             <View style={styles.errorContainer}>
+              <FontAwesome
+                name="exclamation-circle"
+                size={48}
+                color="#FF3B30"
+              />
               <Text style={styles.errorText}>{error}</Text>
               <TouchableOpacity
                 style={styles.retryButton}
-                // onPress={refreshData}
+                onPress={() => console.log("Retry")}
                 activeOpacity={0.7}
               >
                 <Text style={styles.retryButtonText}>Retry</Text>
@@ -289,7 +289,7 @@ const MFReceiptList: React.FC = () => {
           ) : (
             <FlatList
               data={receiptData}
-              renderItem={({ item }) => (
+              renderItem={({ item, index }) => (
                 <ReceiptItemComponent
                   item={item}
                   onPress={() => {
@@ -301,16 +301,13 @@ const MFReceiptList: React.FC = () => {
                   }}
                 />
               )}
-              keyExtractor={(item) => item.LoanNo}
-              contentContainerStyle={[
-                styles.listContainer,
-                { paddingBottom: 80 },
-              ]}
+              keyExtractor={(item, index) => index.toString()} // Use index as key (not recommended)
+              contentContainerStyle={styles.listContainer}
               ListEmptyComponent={renderEmptyList}
               refreshControl={
                 <RefreshControl
                   refreshing={isRefreshing}
-                  // onRefresh={refreshData}
+                  onRefresh={() => console.log("Refreshing data")}
                   colors={["#4D90FE"]}
                   tintColor="#4D90FE"
                 />
@@ -319,37 +316,17 @@ const MFReceiptList: React.FC = () => {
           )}
         </View>
 
+        {/* Footer with Total Amount */}
         <View style={styles.footerContainer}>
           <View style={styles.totalAmountContainer}>
-            <Text style={styles.totalAmountTitle}>Total Amount</Text>
-            <View style={styles.inputContainer}>
-              {/* <TextInput
-                style={styles.totalAmountInput}
-                placeholder="Enter total amount"
-                value={totalAmount}
-                onChangeText={handleTotalAmountChange}
-                editable={!isSaving}
-                keyboardType="decimal-pad"
-              /> */}
-              <Text> {totalAmount}</Text>
-            </View>
-            {/* <TouchableOpacity
-              style={[styles.saveButton, isSaving && styles.savingButton]}
-              onPress={handleSave}
-              disabled={isSaving}
-              activeOpacity={0.7}
-            >
-              {isSaving ? (
-                <ActivityIndicator size="small" color="white" />
-              ) : (
-                <Text style={styles.saveButtonText}>Save</Text>
-              )}
-            </TouchableOpacity> */}
+            <Text style={styles.totalAmountLabel}>Total Amount:</Text>
+            <Text style={styles.totalAmountValue}>{totalAmount}</Text>
           </View>
         </View>
       </KeyboardAvoidingView>
 
-      {/* <PayModalComponent
+      {/* Payment Modal */}
+      <PayModalComponent
         isVisible={isPayModalVisible}
         onClose={() => {
           if (!isUpdatingPayment) {
@@ -362,7 +339,8 @@ const MFReceiptList: React.FC = () => {
         payAmount={payAmount}
         setPayAmount={setPayAmount}
         isUpdatingPayment={isUpdatingPayment}
-      /> */}
+        onPayAmountEnter={handlePayAmountEnter}
+      />
     </SafeAreaView>
   );
 };
@@ -370,111 +348,136 @@ const MFReceiptList: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F1F", // Fixed typo in color
+    backgroundColor: "#F9FAFC",
   },
   keyboardAvoidingContainer: {
     flex: 1,
   },
   contentContainer: {
     flex: 1,
+    paddingBottom: 70, // Space for footer
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 4,
-    paddingHorizontal: 14,
-    backgroundColor: "white",
-    borderBottomColor: "#E0E0E0",
-    borderBottomWidth: 1,
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-  },
-  logoutButton: {
-    padding: 8,
-  },
+
+  // List styles
   listContainer: {
-    padding: 14,
+    padding: 16,
+    paddingBottom: 24,
   },
+
+  // Receipt item styles
   receiptItem: {
     backgroundColor: "white",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#6ca1ff",
-    marginBottom: 12,
-    shadowColor: "black",
-    shadowOffset: { width: 1, height: 2 },
-    shadowOpacity: 2,
-    shadowRadius: 2,
-    elevation: 2,
+    borderColor: "#DDE6FF",
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
     overflow: "hidden",
   },
   receiptHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-    padding: 14,
+    borderBottomColor: "#EEF2FF",
+    padding: 16,
+    backgroundColor: "#F7F9FF",
+  },
+  receiptHeaderLeft: {
+    flex: 1,
+  },
+  receiptHeaderRight: {
+    alignItems: "flex-end",
   },
   receiptId: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
     color: "#333",
+    marginBottom: 4,
   },
   receiptName: {
     fontSize: 14,
     color: "#666",
   },
+  receiptDate: {
+    fontSize: 12,
+    color: "#666",
+  },
+  receiptTime: {
+    fontSize: 12,
+    color: "#888",
+    marginBottom: 4,
+  },
+  receiptNumber: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#4D90FE",
+  },
   receiptBody: {
-    padding: 14,
+    padding: 16,
   },
   amountRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 12,
   },
   amountLabel: {
-    fontSize: 14,
+    fontSize: 15,
     color: "#666",
   },
-  rentalAmountValue: {
-    fontSize: 14,
+  amountValue: {
+    fontSize: 16,
     fontWeight: "600",
     color: "#333",
   },
-  dueAmountValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#FF3B30",
+  statusValue: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#4D90FE",
+    backgroundColor: "#EEF2FF",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    overflow: "hidden",
   },
   payAmountContainer: {
-    marginTop: 8,
-    padding: 8,
+    marginTop: 12,
+    padding: 12,
     backgroundColor: "#E8F2FF",
-    borderRadius: 6,
+    borderRadius: 8,
   },
   payAmountText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "500",
     color: "#4D90FE",
   },
+
+  // Empty, loading, and error states
   emptyContainer: {
-    flex: 1,
+    padding: 40,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 40,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#666",
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  refreshButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: "#4D90FE",
+    borderRadius: 8,
+  },
+  refreshButtonText: {
+    fontSize: 14,
+    color: "white",
+    fontWeight: "500",
   },
   loadingContainer: {
     flex: 1,
@@ -482,9 +485,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#666",
-    marginTop: 14,
+    marginTop: 16,
   },
   errorContainer: {
     flex: 1,
@@ -493,63 +496,58 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   errorText: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#FF3B30",
     textAlign: "center",
+    marginTop: 16,
+    marginBottom: 16,
   },
   retryButton: {
-    marginTop: 14,
-    padding: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
     backgroundColor: "#4D90FE",
     borderRadius: 8,
   },
   retryButtonText: {
     fontSize: 14,
     color: "white",
+    fontWeight: "500",
   },
+
+  // Footer styles
   footerContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: "white",
-    padding: 14,
+    padding: 16,
     borderTopColor: "#E0E0E0",
     borderTopWidth: 1,
     zIndex: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
   },
   totalAmountContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  totalAmountTitle: {
-    fontSize: 14,
+  totalAmountLabel: {
+    fontSize: 16,
     fontWeight: "600",
     color: "#333",
   },
-  inputContainer: {
-    flex: 1,
-    marginLeft: 14,
+  totalAmountValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#4D90FE",
   },
-  totalAmountInput: {
-    fontSize: 14,
-    color: "#333",
-    borderBottomColor: "#E0E0E0",
-    borderBottomWidth: 1,
-    paddingVertical: 8,
-  },
-  saveButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: "#4D90FE",
-    borderRadius: 8,
-    marginLeft: 10,
-  },
-  savingButton: {
-    backgroundColor: "#A0C4FF",
-  },
-  saveButtonText: {
-    fontSize: 14,
-    color: "white",
-    fontWeight: "500",
-  },
+
+  // Modal styles
   modalOverlay: {
     flex: 1,
     justifyContent: "center",
@@ -557,37 +555,60 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    width: "80%",
+    width: "85%",
     backgroundColor: "white",
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: 16,
+    overflow: "hidden",
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 14,
+    backgroundColor: "#F7F9FF",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EEF2FF",
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: "600",
     color: "#333",
   },
+  closeButton: {
+    padding: 4,
+  },
+  modalBody: {
+    padding: 16,
+  },
+  receiptDetails: {
+    marginBottom: 16,
+    padding: 12,
+    backgroundColor: "#F7F9FF",
+    borderRadius: 8,
+  },
   modalReceiptId: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#333",
+    marginBottom: 4,
+  },
+  modalCenterName: {
     fontSize: 14,
     color: "#666",
-    marginBottom: 14,
   },
   modalInput: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#333",
-    borderBottomColor: "#E0E0E0",
-    borderBottomWidth: 1,
-    paddingVertical: 8,
-    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#DDE6FF",
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: "#FCFCFC",
   },
   enterButton: {
-    padding: 12,
+    padding: 14,
     backgroundColor: "#4D90FE",
     borderRadius: 8,
     alignItems: "center",
@@ -596,43 +617,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#A0C4FF",
   },
   enterButtonText: {
-    fontSize: 14,
+    fontSize: 16,
     color: "white",
+    fontWeight: "500",
   },
   cancelButton: {
-    padding: 12,
+    padding: 14,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 12,
   },
   cancelButtonText: {
-    fontSize: 14,
-    color: "#FF3B30",
-  },
-  totalPayAmountContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-    marginBottom: 10,
-  },
-  totalPayAmountLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#666",
-  },
-  totalPayAmountValue: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#4D90FE",
-  },
-  amountMismatch: {
     color: "#FF3B30",
-  },
-  amountMatch: {
-    color: "#34C759",
+    fontWeight: "500",
   },
 });
 
