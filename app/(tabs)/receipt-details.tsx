@@ -123,7 +123,7 @@ interface PayModalComponentProps {
 // Pay Modal Component
 const PayModalComponent: React.FC<PayModalComponentProps> = ({
   isVisible,
-  id,
+  id, // Receive the id
   onClose,
   selectedReceipt,
   payAmount,
@@ -154,7 +154,9 @@ const PayModalComponent: React.FC<PayModalComponentProps> = ({
           <View style={styles.receiptDetails}>
             <Text style={styles.modalReceiptId}>
               Loan: {selectedReceipt ? selectedReceipt.LoanNo : ""}
-              ID: {selectedReceipt ? selectedReceipt.id : ""}
+            </Text>
+            <Text style={styles.modalReceiptId}>
+              ID: {id} {/* Display the id */}
             </Text>
             <Text style={styles.modalCenter_CustName}>
               {selectedReceipt ? selectedReceipt.CenterName : ""}
@@ -185,7 +187,7 @@ const PayModalComponent: React.FC<PayModalComponentProps> = ({
             {isUpdatingPayment ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
-              <Text style={styles.enterButtonText}>Enter</Text>
+              <Text style={styles.enterButtonText}>Confirm Cancel</Text>
             )}
           </TouchableOpacity>
 
@@ -225,15 +227,6 @@ const MFReceiptList: React.FC = () => {
   const [centerID, setCenterID] = useState(params.CenterID || 0);
   const [date, setDTODate] = useState(params.dtoDate || 0);
 
-  // Handle pay amount enter
-  const handlePayAmountEnter = () => {
-    // Add your payment logic here
-    console.log(
-      `Entering payment of ${payAmount} for loan ${selectedReceipt?.LoanNo}`
-    );
-    setPayModalVisible(false);
-  };
-
   // Update centerID and date when params change
   useEffect(() => {
     setCenterID(CenterID);
@@ -267,6 +260,54 @@ const MFReceiptList: React.FC = () => {
     }
   }, [receiptDataParam]);
 
+  // handle cancelation
+  const handlePayAmountEnter = () => {
+    if (selectedReceipt) {
+      const receiptId = selectedReceipt.id; // Get the id
+      const reason = payAmount; // Get the reason
+
+      // Call the API to cancel the receipt
+      cancelReceipt(receiptId, reason);
+    }
+  };
+
+  const cancelReceipt = async (receiptId: number, reason: string) => {
+    try {
+      setIsUpdatingPayment(true); // Show loading state
+      const response = await fetch(`${API_BASE_URL}/cancel-receipt`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          receiptId,
+          reason,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to cancel receipt");
+      }
+
+      const result = await response.json();
+      console.log("Receipt canceled successfully:", result);
+
+      // Update the UI by removing the canceled receipt from the list
+      setReceiptData((prevData) =>
+        prevData.filter((item) => item.id !== receiptId)
+      );
+
+      // Close the modal
+      setPayModalVisible(false);
+      setSelectedReceipt(null);
+      setPayAmount("");
+    } catch (error) {
+      console.error("Error canceling receipt:", error);
+      Alert.alert("Error", "Failed to cancel receipt. Please try again.");
+    } finally {
+      setIsUpdatingPayment(false); // Hide loading state
+    }
+  };
   // Render empty list
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
@@ -361,6 +402,7 @@ const MFReceiptList: React.FC = () => {
         }}
         selectedReceipt={selectedReceipt}
         payAmount={payAmount}
+        id={selectedReceipt ? selectedReceipt.id : 0} // Pass the id
         setPayAmount={setPayAmount}
         isUpdatingPayment={isUpdatingPayment}
         onPayAmountEnter={handlePayAmountEnter}
