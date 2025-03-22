@@ -1,3 +1,4 @@
+// Import necessary dependencies
 import { Tabs, useRouter } from "expo-router";
 import React from "react";
 import { Platform, Text, TouchableOpacity, Alert } from "react-native";
@@ -7,13 +8,13 @@ import {
   MaterialIcons,
 } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+// API base URL from environment variables
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 export default function TabLayout() {
   const router = useRouter();
 
-  // Logout function
+  // Logout button component..
   const handleLogout = async () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       {
@@ -26,7 +27,7 @@ export default function TabLayout() {
           try {
             // Create an AbortController for timeout handling
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5-second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5-second time
 
             // Call the logout API
             const response = await fetch(`${API_BASE_URL}/auth/logout`, {
