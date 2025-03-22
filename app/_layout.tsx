@@ -10,7 +10,7 @@ export default function RootLayout() {
         headerBackTitle: " ", // This will hide the "index" text but keep the back button
       }}
     >
-      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="indeX" options={{ headerShown: false }} />
       {/* <Stack.Screen name="" options={{ headerShown: false }} /> */}
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
