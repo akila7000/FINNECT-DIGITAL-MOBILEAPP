@@ -71,7 +71,7 @@ const isSmallDevice = width < 375;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#001432",
+    backgroundColor: "#001436",
   },
   backgroundImage: {
     flex: 1,
