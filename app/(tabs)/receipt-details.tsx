@@ -59,6 +59,7 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
         <View style={styles.receiptHeaderLeft}>
           <Text style={styles.receiptId}>Loan No: {item.LoanNo}</Text>
           <Text style={styles.receiptName}>{item.CenterName}</Text>
+          <Text style={styles.receiptName}>{item.ReceiptNo}</Text>
         </View>
         <View style={styles.receiptHeaderRight}>
           <Text style={styles.receiptDate}>{formattedDate}</Text>
@@ -91,6 +92,8 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
                   styles.statusText,
                   item.Status === "Pending"
                     ? styles.pendingText
+                    : styles.defaultText || item.Status === "Pending Cancel"
+                    ? styles.defaultText
                     : styles.defaultText,
                 ]}
               >
@@ -177,8 +180,10 @@ const PayModalComponent: React.FC<PayModalComponentProps> = ({
             placeholder="Enter reason"
             autoCapitalize="none"
             value={payAmount}
-            keyboardType="decimal-pad"
-            onChangeText={(text) => setPayAmount(text.replace(/[^0-9.]/g, ""))}
+            keyboardType="default"
+            onChangeText={(text) =>
+              setPayAmount(text.replace(/[^0-9.a-zA-Z\s]/g, ""))
+            }
             editable={!isUpdatingPayment}
           />
 
@@ -240,7 +245,6 @@ const MFReceiptList: React.FC = () => {
   useEffect(() => {
     setCenterID(CenterID);
     setDTODate(dtoDate);
-    console.log("Fetching data on component", date, CenterID);
   }, [params.CenterID, params.dtoDate]);
 
   // Handle initial data fetch
@@ -297,51 +301,99 @@ const MFReceiptList: React.FC = () => {
   // handle cancelation
   const handlePayAmountEnter = () => {
     if (selectedReceipt) {
-      const receiptId = selectedReceipt.id; // Get the id
+      const receiptNo = selectedReceipt.ReceiptNo; // Get the id
       const reason = payAmount; // Get the reason
 
+      // setCancelReceiptNo(receiptNo)
+
       // Call the API to cancel the receipt
-      cancelReceipt(receiptId, reason);
+      cancelReceipt(receiptNo, reason);
     }
   };
 
-  const cancelReceipt = async (receiptId: number, reason: string) => {
+  const cancelReceipt = async (receiptNo: string, reason: string) => {
     try {
-      setIsUpdatingPayment(true); // Show loading state
-      const response = await fetch(`${API_BASE_URL}/cancel-receipt`, {
+      // setIsUpdatingPayment(true); // Show loading state
+
+      const response = await fetch(
+        `${API_BASE_URL}/MFReceipt/ReceiptCancellationRequest`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            receiptNo: receiptNo,
+            cancelReason: reason,
+          }),
+        }
+      );
+
+      console.log("Raw response:", response); // Debugging
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        Alert.alert(
+          "Error",
+          errorText || "An error occurred during processing"
+        );
+        return;
+      }
+
+      const responseData = await response.text();
+      Alert.alert(
+        "Success",
+        `Total amount of Receipt No ${responseData} and payments saved successfully.`
+      );
+
+      setPayModalVisible(false);
+      setSelectedReceipt(null);
+      setPayAmount("");
+      refreshData(receiptNo, reason);
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "An unexpected error occurred");
+      console.error("Error saving payment data:", err);
+    } finally {
+      setIsUpdatingPayment(false); // Hide loading state
+    }
+  };
+  const refreshData = async (receiptNo, reason) => {
+    // setApiStatus("loading");
+    setIsRefreshing(true);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/MFReceipt/getLoanDetails`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          receiptId,
-          reason,
+          receiptNo: receiptNo,
+          cancelReason: reason,
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to cancel receipt");
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      const result = await response.json();
-      console.log("Receipt canceled successfully:", result);
+      const data = await response.json();
+      // console.log(data);
 
-      // Update the UI by removing the canceled receipt from the list
-      setReceiptData((prevData) =>
-        prevData.filter((item) => item.id !== receiptId)
-      );
-
-      // Close the modal
-      setPayModalVisible(false);
-      setSelectedReceipt(null);
-      setPayAmount("");
+      setReceiptData(data);
+      // setApiStatus("success");
     } catch (error) {
-      console.error("Error canceling receipt:", error);
-      Alert.alert("Error", "Failed to cancel receipt. Please try again.");
+      // setApiStatus("error");
+      setError("Failed to fetch receipt data. Please try again.");
+      Alert.alert("Error", "Failed to fetch receipt data. Please try again.");
     } finally {
-      setIsUpdatingPayment(false); // Hide loading state
+      setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
+
   // Render empty list
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
