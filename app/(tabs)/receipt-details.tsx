@@ -220,7 +220,8 @@ const MFReceiptList: React.FC = () => {
   const { CenterID, dtoDate } = params;
 
   // State variables
-  const [totalAmount, setTotalAmount] = useState<string>("0");
+  const [postedAmount, setPostedAmount] = useState<string>("0");
+  const [pendingAmount, setPendingAmount] = useState<string>("0");
   const [isPayModalVisible, setPayModalVisible] = useState<boolean>(false);
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptItem | null>(
     null
@@ -249,11 +250,30 @@ const MFReceiptList: React.FC = () => {
         setReceiptData(parsedData);
 
         // Calculate total amount
-        const total = parsedData.reduce(
+
+        // Filter items separately for "Posted" and "Pending" statuses
+        const postedItems = parsedData.filter(
+          (item: ReceiptItem) => item.Status === "Posted"
+        );
+        const pendingItems = parsedData.filter(
+          (item: ReceiptItem) => item.Status === "Pending"
+        );
+
+        // Calculate total for "Posted" items
+        const postedTotal = postedItems.reduce(
           (sum: number, item: ReceiptItem) => sum + item.amount,
           0
         );
-        setTotalAmount(total.toLocaleString());
+
+        // Calculate total for "Pending" items
+        const pendingTotal = pendingItems.reduce(
+          (sum: number, item: ReceiptItem) => sum + item.amount,
+          0
+        );
+
+        // Format the totals
+        setPostedAmount(postedTotal.toLocaleString());
+        setPendingAmount(pendingTotal.toLocaleString());
 
         setIsLoading(false);
       } catch (error) {
@@ -391,8 +411,10 @@ const MFReceiptList: React.FC = () => {
         {/* Footer with Total Amount */}
         <View style={styles.footerContainer}>
           <View style={styles.totalAmountContainer}>
-            <Text style={styles.totalAmountLabel}>Total Amount:</Text>
-            <Text style={styles.totalAmountValue}>{totalAmount}</Text>
+            <Text style={styles.totalAmountLabel}>Posted Amount:</Text>
+            <Text style={styles.totalAmountLabel}>{postedAmount}</Text>
+            <Text style={styles.totalAmountLabel}>Pending Amount:</Text>
+            <Text style={styles.totalAmountValue}>{pendingAmount}</Text>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -717,7 +739,7 @@ const styles = StyleSheet.create({
     right: 2, // Adjust the left position as needed
     bottom: 2, // Adjust the top position as needed
     zIndex: 1, // Ensure the button is above other elements
-    padding:1
+    padding: 1,
   },
   // Add these to your existing styles object
   infoContainer: {
