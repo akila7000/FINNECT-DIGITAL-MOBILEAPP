@@ -206,7 +206,7 @@ const MFReceiptList: React.FC = () => {
   }, [receiptDataParam]);
 
   // Refresh data function
-  const refreshData = async () => {
+  const  refreshData = async () => {
     // setApiStatus("loading");
     setIsRefreshing(true);
     setIsLoading(true);

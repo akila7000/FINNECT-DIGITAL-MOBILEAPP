@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -23,7 +23,7 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 type ReceiptItem = {
   id: number;
   loanID: number;
-  LoanNo: any;
+  LoanNo: string;
   CenterName: string;
   Status: string;
   logDate: string;
@@ -78,7 +78,6 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
           </View>
 
           <View style={styles.statusContainer}>
-            {/* <Text style={styles.infoLabel}>Status:</Text> */}
             <View
               style={[
                 styles.statusBadge,
@@ -92,8 +91,6 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
                   styles.statusText,
                   item.Status === "Pending"
                     ? styles.pendingText
-                    : styles.defaultText || item.Status === "Pending Cancel"
-                    ? styles.defaultText
                     : styles.defaultText,
                 ]}
               >
@@ -119,6 +116,7 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
     </TouchableOpacity>
   );
 };
+
 interface PayModalComponentProps {
   isVisible: boolean;
   onClose: () => void;
@@ -133,7 +131,7 @@ interface PayModalComponentProps {
 // Pay Modal Component
 const PayModalComponent: React.FC<PayModalComponentProps> = ({
   isVisible,
-  id, // Receive the id
+  id,
   onClose,
   selectedReceipt,
   payAmount,
@@ -163,15 +161,13 @@ const PayModalComponent: React.FC<PayModalComponentProps> = ({
         <View style={styles.modalBody}>
           <View style={styles.receiptDetails}>
             <Text style={styles.modalReceiptId}>
-              Loan: {selectedReceipt ? selectedReceipt.LoanNo : ""}
+              Loan: {selectedReceipt?.LoanNo || ""}
             </Text>
-            <Text style={styles.modalReceiptId}>
-              ID: {id} {/* Display the id */}
-            </Text>
+            <Text style={styles.modalReceiptId}>ID: {id}</Text>
             <Text style={styles.modalCenter_CustName}>
-              {selectedReceipt ? selectedReceipt.CenterName : ""}
+              {selectedReceipt?.CenterName || ""}
             </Text>
-            <Text>{selectedReceipt ? selectedReceipt.CustName : ""}</Text>
+            <Text>{selectedReceipt?.CustName || ""}</Text>
           </View>
 
           <Text>Enter reason</Text>
@@ -193,7 +189,7 @@ const PayModalComponent: React.FC<PayModalComponentProps> = ({
               isUpdatingPayment && styles.updatingButton,
             ]}
             onPress={onPayAmountEnter}
-            disabled={isUpdatingPayment}
+            disabled={isUpdatingPayment || !payAmount.trim()}
             activeOpacity={0.7}
           >
             {isUpdatingPayment ? (
@@ -218,11 +214,25 @@ const PayModalComponent: React.FC<PayModalComponentProps> = ({
   </Modal>
 );
 
+const calculateTotals = (data: ReceiptItem[]) => {
+  const postedItems = data.filter((item) => item.Status === "Posted");
+  const pendingItems = data.filter((item) => item.Status === "Pending");
+
+  const postedTotal = postedItems.reduce((sum, item) => sum + item.amount, 0);
+  const pendingTotal = pendingItems.reduce((sum, item) => sum + item.amount, 0);
+  const total = data.reduce((sum, item) => sum + item.amount, 0);
+
+  return {
+    posted: postedTotal.toLocaleString(),
+    pending: pendingTotal.toLocaleString(),
+    total: total.toLocaleString(),
+  };
+};
+
 const MFReceiptList: React.FC = () => {
   // Get params from router
   const params = useLocalSearchParams();
-  const { receiptData: receiptDataParam } = params;
-  const { CenterID, dtoDate } = params;
+  const { receiptData: receiptDataParam, CenterID, dtoDate } = params;
 
   // State variables
   const [postedAmount, setPostedAmount] = useState<string>("0");
@@ -238,83 +248,53 @@ const MFReceiptList: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isUpdatingPayment, setIsUpdatingPayment] = useState<boolean>(false);
-  const [centerID, setCenterID] = useState(params.CenterID || 0);
-  const [date, setDTODate] = useState(params.dtoDate || 0);
+  const [centerID, setCenterID] = useState<number>(Number(CenterID) || 0);
+  const [date, setDTODate] = useState<string>(String(dtoDate) || "");
 
   // Update centerID and date when params change
   useEffect(() => {
-    setCenterID(CenterID);
-    setDTODate(dtoDate);
-  }, [params.CenterID, params.dtoDate]);
+    if (CenterID) setCenterID(Number(CenterID));
+    if (dtoDate) setDTODate(String(dtoDate));
+  }, [CenterID, dtoDate]);
 
   // Handle initial data fetch
   useEffect(() => {
-    if (receiptDataParam) {
+    let isMounted = true;
+
+    const initializeData = async () => {
       try {
-        const parsedData = JSON.parse(receiptDataParam as string);
-        setReceiptData(parsedData);
-
-        // Calculate total amount
-
-        // Calculate total amount
-        const totalAmount = parsedData.reduce(
-          (sum: number, item: ReceiptItem) => sum + item.amount,
-          0
-        );
-        setTotalAmount(totalAmount.toLocaleString());
-        // Filter items separately for "Posted" and "Pending" statuses
-        const postedItems = parsedData.filter(
-          (item: ReceiptItem) => item.Status === "Posted"
-        );
-        const pendingItems = parsedData.filter(
-          (item: ReceiptItem) => item.Status === "Pending"
-        );
-
-        // Calculate total for "Posted" items
-        const postedTotal = postedItems.reduce(
-          (sum: number, item: ReceiptItem) => sum + item.amount,
-          0
-        );
-
-        // Calculate total for "Pending" items
-        const pendingTotal = pendingItems.reduce(
-          (sum: number, item: ReceiptItem) => sum + item.amount,
-          0
-        );
-
-        // Format the totals
-        setPostedAmount(postedTotal.toLocaleString());
-        setPendingAmount(pendingTotal.toLocaleString());
-
-        setIsLoading(false);
+        if (receiptDataParam) {
+          const parsedData = JSON.parse(receiptDataParam as string);
+          if (isMounted) {
+            setReceiptData(parsedData);
+            const totals = calculateTotals(parsedData);
+            setPostedAmount(totals.posted);
+            setPendingAmount(totals.pending);
+            setTotalAmount(totals.total);
+          }
+        }
       } catch (error) {
-        console.error("Failed to parse receipt data:", error);
-        setError("Failed to parse receipt data. Please try again.");
-        setIsLoading(false);
+        if (isMounted) {
+          setError("Failed to parse receipt data. Please try again.");
+          console.error("Failed to parse receipt data:", error);
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
-    } else {
-      // If we need to fetch data from API later
-      setIsLoading(false);
-    }
+    };
+
+    initializeData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [receiptDataParam]);
 
-  // handle cancelation
-  const handlePayAmountEnter = () => {
-    if (selectedReceipt) {
-      const receiptNo = selectedReceipt.ReceiptNo; // Get the id
-      const reason = payAmount; // Get the reason
+  const refreshData = useCallback(async () => {
+    setIsRefreshing(true);
+    setError(null);
 
-      // setCancelReceiptNo(receiptNo)
-
-      // Call the API to cancel the receipt
-      cancelReceipt(receiptNo, reason);
-    }
-  };
-
-  const cancelReceipt = async (receiptNo: string, reason: string) => {
     try {
-      // setIsUpdatingPayment(true); // Show loading state
-
       const response = await fetch(
         `${API_BASE_URL}/MFReceipt/ReceiptCancellationRequest`,
         {
@@ -323,76 +303,82 @@ const MFReceiptList: React.FC = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            receiptNo: receiptNo,
-            cancelReason: reason,
+            CenterID: centerID,
+            dtoDate: date,
           }),
         }
       );
-
-      console.log("Raw response:", response); // Debugging
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        Alert.alert(
-          "Error",
-          errorText || "An error occurred during processing"
-        );
-        return;
-      }
-
-      const responseData = await response.text();
-      Alert.alert(
-        "Success",
-        `Total amount of Receipt No ${responseData} and payments saved successfully.`
-      );
-
-      setPayModalVisible(false);
-      setSelectedReceipt(null);
-      setPayAmount("");
-      refreshData(receiptNo, reason);
-    } catch (err: any) {
-      Alert.alert("Error", err.message || "An unexpected error occurred");
-      console.error("Error saving payment data:", err);
-    } finally {
-      setIsUpdatingPayment(false); // Hide loading state
-    }
-  };
-  const refreshData = async (receiptNo, reason) => {
-    // setApiStatus("loading");
-    setIsRefreshing(true);
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/MFReceipt/getLoanDetails`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          receiptNo: receiptNo,
-          cancelReason: reason,
-        }),
-      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
       const data = await response.json();
-      // console.log(data);
-
       setReceiptData(data);
-      // setApiStatus("success");
+      const totals = calculateTotals(data);
+      setPostedAmount(totals.posted);
+      setPendingAmount(totals.pending);
+      setTotalAmount(totals.total);
     } catch (error) {
-      // setApiStatus("error");
-      setError("Failed to fetch receipt data. Please try again.");
       Alert.alert("Error", "Failed to fetch receipt data. Please try again.");
+      // console.error("Error refreshing data:", error);
     } finally {
-      setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [centerID, date]);
+
+  const cancelReceipt = useCallback(
+    async (receiptNo: string, reason: string) => {
+      try {
+        setIsUpdatingPayment(true);
+        const response = await fetch(
+          `${API_BASE_URL}/MFReceipt/ReceiptCancellationRequest`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              receiptNo: receiptNo,
+              cancelReason: reason,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "An error occurred during processing");
+        }
+
+        const responseData = await response.text();
+        Alert.alert(
+          "Success",
+          `Receipt ${responseData} cancellation requested successfully.`
+        );
+
+        await refreshData();
+        setPayModalVisible(false);
+        setSelectedReceipt(null);
+        setPayAmount("");
+      } catch (err: any) {
+        Alert.alert("Error", err.message || "An unexpected error occurred");
+        console.error("Error cancelling receipt:", err);
+      } finally {
+        setIsUpdatingPayment(false);
+      }
+    },
+    [refreshData]
+  );
+
+  const handlePayAmountEnter = useCallback(() => {
+    if (!payAmount.trim()) {
+      Alert.alert("Error", "Please enter a reason for cancellation");
+      return;
+    }
+    if (selectedReceipt) {
+      cancelReceipt(selectedReceipt.ReceiptNo, payAmount);
+    }
+  }, [payAmount, selectedReceipt, cancelReceipt]);
 
   // Render empty list
   const renderEmptyList = () => (
@@ -400,7 +386,8 @@ const MFReceiptList: React.FC = () => {
       <Text style={styles.emptyText}>No receipt data available</Text>
       <TouchableOpacity
         style={styles.refreshButton}
-        onPress={() => console.log("Refresh")}
+        onPress={refreshData}
+        activeOpacity={0.7}
       >
         <Text style={styles.refreshButtonText}>Refresh</Text>
       </TouchableOpacity>
@@ -431,7 +418,7 @@ const MFReceiptList: React.FC = () => {
               <Text style={styles.errorText}>{error}</Text>
               <TouchableOpacity
                 style={styles.retryButton}
-                onPress={() => console.log("Retry")}
+                onPress={refreshData}
                 activeOpacity={0.7}
               >
                 <Text style={styles.retryButtonText}>Retry</Text>
@@ -440,25 +427,23 @@ const MFReceiptList: React.FC = () => {
           ) : (
             <FlatList
               data={receiptData}
-              renderItem={({ item, index }) => (
+              renderItem={({ item }) => (
                 <ReceiptItemComponent
                   item={item}
                   onPress={() => {
                     setSelectedReceipt(item);
-                    setPayAmount(
-                      item.payAmount ? item.payAmount.toString() : ""
-                    );
+                    setPayAmount("");
                     setPayModalVisible(true);
                   }}
                 />
               )}
-              keyExtractor={(item, index) => index.toString()} // Use index as key (not recommended)
+              keyExtractor={(item) => item.id.toString()}
               contentContainerStyle={styles.listContainer}
               ListEmptyComponent={renderEmptyList}
               refreshControl={
                 <RefreshControl
                   refreshing={isRefreshing}
-                  onRefresh={() => console.log("Refreshing data")}
+                  onRefresh={refreshData}
                   colors={["#4D90FE"]}
                   tintColor="#4D90FE"
                 />
@@ -494,7 +479,7 @@ const MFReceiptList: React.FC = () => {
         }}
         selectedReceipt={selectedReceipt}
         payAmount={payAmount}
-        id={selectedReceipt ? selectedReceipt.id : 0} // Pass the id
+        id={selectedReceipt?.id || 0}
         setPayAmount={setPayAmount}
         isUpdatingPayment={isUpdatingPayment}
         onPayAmountEnter={handlePayAmountEnter}
