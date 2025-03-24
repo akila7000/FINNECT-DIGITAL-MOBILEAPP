@@ -222,6 +222,7 @@ const MFReceiptList: React.FC = () => {
   // State variables
   const [postedAmount, setPostedAmount] = useState<string>("0");
   const [pendingAmount, setPendingAmount] = useState<string>("0");
+  const [totalAmount, setTotalAmount] = useState<string>("0");
   const [isPayModalVisible, setPayModalVisible] = useState<boolean>(false);
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptItem | null>(
     null
@@ -251,6 +252,12 @@ const MFReceiptList: React.FC = () => {
 
         // Calculate total amount
 
+        // Calculate total amount
+        const totalAmount = parsedData.reduce(
+          (sum: number, item: ReceiptItem) => sum + item.amount,
+          0
+        );
+        setTotalAmount(totalAmount.toLocaleString());
         // Filter items separately for "Posted" and "Pending" statuses
         const postedItems = parsedData.filter(
           (item: ReceiptItem) => item.Status === "Posted"
@@ -411,10 +418,14 @@ const MFReceiptList: React.FC = () => {
         {/* Footer with Total Amount */}
         <View style={styles.footerContainer}>
           <View style={styles.totalAmountContainer}>
-            <Text style={styles.totalAmountLabel}>Posted Amount:</Text>
-            <Text style={styles.totalAmountLabel}>{postedAmount}</Text>
-            <Text style={styles.totalAmountLabel}>Pending Amount:</Text>
-            <Text style={styles.totalAmountValue}>{pendingAmount}</Text>
+            <Text style={styles.amountLabel}>Posted Amount:</Text>
+            <Text style={styles.postedAmountValue}>{postedAmount}</Text>
+
+            <Text style={styles.amountLabel}>Pending:</Text>
+            <Text style={styles.pendingAmountValue}>{pendingAmount}</Text>
+
+            <Text style={styles.amountLabel}>Total: </Text>
+            <Text style={styles.totalAmountValue}>{totalAmount}</Text>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -528,7 +539,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   amountLabel: {
-    fontSize: 15,
+    fontSize: 12,
     color: "#666",
   },
   amountValue: {
@@ -638,15 +649,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  totalAmountLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
+
+  pendingAmountValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#4D90FE",
   },
   totalAmountValue: {
     fontSize: 18,
     fontWeight: "700",
     color: "#4D90FE",
+  },
+  postedAmountValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#07e71e",
   },
 
   // Modal styles
