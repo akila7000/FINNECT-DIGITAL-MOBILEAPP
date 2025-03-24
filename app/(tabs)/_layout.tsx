@@ -157,7 +157,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="summarize" size={size} color={color} />
           ),
-          headerTitle: "Receipt Details",
+          headerTitle: "Summary Details",
         }}
       />
     </Tabs>

@@ -22,7 +22,7 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 // Define types
 type ReceiptItem = {
   loanID: number;
-  id:number;
+  id: number;
   LoanNo: any;
   Client_Name: string;
   GroupName: string;
@@ -234,7 +234,6 @@ const MFReceiptList: React.FC = () => {
       setReceiptData(data);
       // setApiStatus("success");
     } catch (error) {
-      // console.error("Failed to fetch receipt data:", error);
       // setApiStatus("error");
       setError("Failed to fetch receipt data. Please try again.");
       Alert.alert("Error", "Failed to fetch receipt data. Please try again.");
@@ -352,7 +351,7 @@ const MFReceiptList: React.FC = () => {
       );
       return;
     }
-    setTotalAmount('');
+    setTotalAmount("");
 
     processPayment(enteredTotal, totalPayAmount, receiptsWithPayments);
   };

@@ -174,10 +174,7 @@ export default function MFReceiptDetails() {
     }
     closeDropdown();
   };
-  useEffect(() => {
-    console.log("CenterId", center);
-    console.log("date", date);
-  });
+ 
 
   const fetchReceiptData = async () => {
     setApiStatus("loading");
