@@ -77,9 +77,10 @@ export default function TabLayout() {
           fontWeight: "500",
         },
         tabBarStyle: {
-          height: Platform.OS === "ios" ? 75 : 90,
-          paddingBottom: Platform.OS === "ios" ? 30 : 10,
+          height: Platform.OS === "ios" ? 80 : 90,
+          paddingBottom: Platform.OS === "ios" ? 40 : 40,
           paddingTop: 5,
+          paddingHorizontal: Platform.OS === "ios" ? 20 : 20,
           backgroundColor: "white",
           justifyContent: "space-between",
 
@@ -110,7 +111,11 @@ export default function TabLayout() {
         options={{
           title: "Find Payment Recipients",
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="file-find-outline" size={size} color={color} />
+            <MaterialCommunityIcons
+              name="file-find-outline"
+              size={size}
+              color={color}
+            />
           ),
           headerTitle: "Find Payment Recipients",
         }}
@@ -138,9 +143,19 @@ export default function TabLayout() {
       <Tabs.Screen
         name="receipt-details"
         options={{
-          title: " Receipt Details",
+          title: "Receipt Details",
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="receipt-long" size={size} color={color} />
+          ),
+          headerTitle: "Receipt Details",
+        }}
+      />
+      <Tabs.Screen
+        name="summary-sheet"
+        options={{
+          title: "Summary",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="summarize" size={size} color={color} />
           ),
           headerTitle: "Receipt Details",
         }}

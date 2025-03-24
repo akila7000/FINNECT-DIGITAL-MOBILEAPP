@@ -653,7 +653,7 @@ const styles = StyleSheet.create({
   pendingAmountValue: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#4D90FE",
+    color: "#FFA500",
   },
   totalAmountValue: {
     fontSize: 18,

@@ -197,7 +197,7 @@ const MFReceiptList: React.FC = () => {
         setIsLoading(false);
       } catch (error) {
         // console.error("Failed to parse receipt data:", error);
-        setError("Failed to parse receipt data. Please try again.");
+        // setError("Failed to parse receipt data. Please try again.");
         setIsLoading(false);
       }
     } else {
@@ -234,7 +234,7 @@ const MFReceiptList: React.FC = () => {
       setReceiptData(data);
       // setApiStatus("success");
     } catch (error) {
-      console.error("Failed to fetch receipt data:", error);
+      // console.error("Failed to fetch receipt data:", error);
       // setApiStatus("error");
       setError("Failed to fetch receipt data. Please try again.");
       Alert.alert("Error", "Failed to fetch receipt data. Please try again.");
