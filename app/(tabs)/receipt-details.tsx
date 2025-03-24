@@ -57,14 +57,15 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
     <TouchableOpacity style={styles.receiptItem} activeOpacity={0.7}>
       <View style={styles.receiptHeader}>
         <View style={styles.receiptHeaderLeft}>
-          <Text style={styles.receiptId}>Loan No: {item.LoanNo}</Text>
-          <Text style={styles.receiptName}>{item.CenterName}</Text>
-          <Text style={styles.receiptName}>{item.ReceiptNo}</Text>
+          <Text style={styles.receiptId}>{item.LoanNo}</Text>
+          <Text style={styles.custName}>{item.CustName}</Text>
+          <Text style={styles.centerName}>{item.ReceiptNo}</Text>
         </View>
         <View style={styles.receiptHeaderRight}>
           <Text style={styles.receiptDate}>{formattedDate}</Text>
           <Text style={styles.receiptTime}>{formattedTime}</Text>
-          <Text style={styles.receiptNumber}>{item.CustName}</Text>
+
+          <Text style={styles.centerName}>{item.CenterName}</Text>
         </View>
       </View>
 
@@ -82,16 +83,22 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
               style={[
                 styles.statusBadge,
                 item.Status === "Pending"
-                  ? styles.pendingBadge
-                  : styles.defaultBadge,
+                  ? { backgroundColor: "#FFC107" } // Yellow
+                  : item.Status === "Pending Cancel"
+                  ? { backgroundColor: "#FF9800" } // Orange
+                  : item.Status === "Posted"
+                  ? { backgroundColor: "#4CAF50" } // Green
+                  : item.Status === "Cancelled"
+                  ? { backgroundColor: "#F44336" } // Red
+                  : { backgroundColor: "#9E9E9E" }, // Grey (Default)
               ]}
             >
               <Text
                 style={[
                   styles.statusText,
-                  item.Status === "Pending"
-                    ? styles.pendingText
-                    : styles.defaultText,
+                  item.Status === "Pending" || item.Status === "Pending Cancel"
+                    ? { color: "#000", fontWeight: "bold" }
+                    : { color: "#FFF", fontWeight: "bold" },
                 ]}
               >
                 {item.Status}
@@ -213,7 +220,6 @@ const PayModalComponent: React.FC<PayModalComponentProps> = ({
     </View>
   </Modal>
 );
-
 const calculateTotals = (data: ReceiptItem[]) => {
   const postedItems = data.filter((item) => item.Status === "Posted");
   const pendingItems = data.filter((item) => item.Status === "Pending");
@@ -223,9 +229,9 @@ const calculateTotals = (data: ReceiptItem[]) => {
   const total = data.reduce((sum, item) => sum + item.amount, 0);
 
   return {
-    posted: postedTotal.toLocaleString(),
-    pending: pendingTotal.toLocaleString(),
-    total: total.toLocaleString(),
+    posted: postedTotal, // Now returning number instead of string
+    pending: pendingTotal, // Now returning number instead of string
+    total: postedTotal + pendingTotal,
   };
 };
 
@@ -235,9 +241,11 @@ const MFReceiptList: React.FC = () => {
   const { receiptData: receiptDataParam, CenterID, dtoDate } = params;
 
   // State variables
-  const [postedAmount, setPostedAmount] = useState<string>("0");
-  const [pendingAmount, setPendingAmount] = useState<string>("0");
-  const [totalAmount, setTotalAmount] = useState<string>("0");
+  // Change the state declarations to use numbers
+  const [postedAmount, setPostedAmount] = useState<number>(0);
+  const [pendingAmount, setPendingAmount] = useState<number>(0);
+  const [totalAmount, setTotalAmount] = useState<number>(0);
+
   const [isPayModalVisible, setPayModalVisible] = useState<boolean>(false);
   const [selectedReceipt, setSelectedReceipt] = useState<ReceiptItem | null>(
     null
@@ -362,7 +370,6 @@ const MFReceiptList: React.FC = () => {
         setPayAmount("");
       } catch (err: any) {
         Alert.alert("Error", err.message || "An unexpected error occurred");
-        console.error("Error cancelling receipt:", err);
       } finally {
         setIsUpdatingPayment(false);
       }
@@ -379,6 +386,17 @@ const MFReceiptList: React.FC = () => {
       cancelReceipt(selectedReceipt.ReceiptNo, payAmount);
     }
   }, [payAmount, selectedReceipt, cancelReceipt]);
+
+  // Replace the formatAmount function with this:
+  const formatAmount = (amount: number | string): string => {
+    // Convert string to number if needed
+    const numAmount =
+      typeof amount === "string" ? parseFloat(amount) || 0 : amount;
+    return numAmount.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
 
   // Render empty list
   const renderEmptyList = () => (
@@ -455,14 +473,29 @@ const MFReceiptList: React.FC = () => {
         {/* Footer with Total Amount */}
         <View style={styles.footerContainer}>
           <View style={styles.totalAmountContainer}>
-            <Text style={styles.amountLabel}>Posted Amount:</Text>
-            <Text style={styles.postedAmountValue}>{postedAmount}</Text>
+            <View>
+              <Text style={styles.amountLabel}>Posted:</Text>
+              <Text style={styles.postedAmountValue}>
+                {postedAmount.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </Text>
+            </View>
 
-            <Text style={styles.amountLabel}>Pending:</Text>
-            <Text style={styles.pendingAmountValue}>{pendingAmount}</Text>
+            <View>
+              <Text style={styles.amountLabel}>Pending:</Text>
+              <Text style={styles.pendingAmountValue}>
+                {formatAmount(pendingAmount)}
+              </Text>
+            </View>
 
-            <Text style={styles.amountLabel}>Total: </Text>
-            <Text style={styles.totalAmountValue}>{totalAmount}</Text>
+            <View>
+              <Text style={styles.amountLabel}>Total:</Text>
+              <Text style={styles.totalAmountValue}>
+                {formatAmount(totalAmount)}
+              </Text>
+            </View>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -541,8 +574,8 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 4,
   },
-  receiptName: {
-    fontSize: 14,
+  centerName: {
+    fontSize: 12,
     color: "#666",
   },
   receiptDate: {
@@ -554,8 +587,8 @@ const styles = StyleSheet.create({
     color: "#888",
     marginBottom: 4,
   },
-  receiptNumber: {
-    fontSize: 12,
+  custName: {
+    fontSize: 15,
     fontWeight: "500",
     color: "#4D90FE",
   },
@@ -700,7 +733,7 @@ const styles = StyleSheet.create({
   postedAmountValue: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#07e71e",
+    color: "#4CAF50",
   },
 
   // Modal styles
