@@ -77,7 +77,7 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
           </View>
 
           <View style={styles.statusContainer}>
-            <Text style={styles.infoLabel}>Status:</Text>
+            {/* <Text style={styles.infoLabel}>Status:</Text> */}
             <View
               style={[
                 styles.statusBadge,
@@ -753,7 +753,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFA500",
   },
   defaultBadge: {
-    backgroundColor: "#EEF2FF",
+    backgroundColor: "#07e71e",
   },
   statusText: {
     fontSize: 15,
@@ -763,7 +763,7 @@ const styles = StyleSheet.create({
     color: "white",
   },
   defaultText: {
-    color: "#4D90FE",
+    color: "white",
   },
 });
 
