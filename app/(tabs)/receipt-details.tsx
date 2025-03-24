@@ -19,7 +19,7 @@ import { useLocalSearchParams } from "expo-router";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
-// Define types
+// Define types (keep existing type definitions)
 type ReceiptItem = {
   id: number;
   loanID: number;
@@ -33,17 +33,310 @@ type ReceiptItem = {
   CustName: string;
 };
 
-interface ReceiptItemComponentProps {
+const MFReceiptList: React.FC = () => {
+  // Get params from router
+  const params = useLocalSearchParams();
+  const { receiptData: receiptDataParam, CenterID, dtoDate } = params;
+
+  // State variables
+  const [postedAmount, setPostedAmount] = useState<number>(0);
+  const [pendingAmount, setPendingAmount] = useState<number>(0);
+  const [totalAmount, setTotalAmount] = useState<number>(0);
+
+  const [isPayModalVisible, setPayModalVisible] = useState<boolean>(false);
+  const [selectedReceipt, setSelectedReceipt] = useState<ReceiptItem | null>(
+    null
+  );
+  const [payAmount, setPayAmount] = useState<string>("");
+  const [receiptData, setReceiptData] = useState<ReceiptItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isUpdatingPayment, setIsUpdatingPayment] = useState<boolean>(false);
+  const [centerID, setCenterID] = useState<number>(Number(CenterID) || 0);
+  const [date, setDTODate] = useState<string>(String(dtoDate) || "");
+
+  // Calculate totals function
+  const calculateTotals = (data: ReceiptItem[]) => {
+    const postedItems = data.filter((item) => item.Status === "Posted");
+    const pendingItems = data.filter((item) => item.Status === "Pending");
+
+    const postedTotal = postedItems.reduce((sum, item) => sum + item.amount, 0);
+    const pendingTotal = pendingItems.reduce(
+      (sum, item) => sum + item.amount,
+      0
+    );
+
+    return {
+      posted: postedTotal,
+      pending: pendingTotal,
+      total: postedTotal + pendingTotal,
+    };
+  };
+
+  // Update centerID and date when params change
+  useEffect(() => {
+    if (CenterID) setCenterID(Number(CenterID));
+    if (dtoDate) setDTODate(String(dtoDate));
+  }, [CenterID, dtoDate]);
+
+  // Initial data loading
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        if (receiptDataParam) {
+          const parsedData = JSON.parse(receiptDataParam as string);
+          setReceiptData(parsedData);
+
+          // Calculate and set totals
+          const totals = calculateTotals(parsedData);
+          setPostedAmount(totals.posted);
+          setPendingAmount(totals.pending);
+          setTotalAmount(totals.total);
+        }
+      } catch (error) {
+        setError("Failed to parse receipt data. Please try again.");
+        console.error("Failed to parse receipt data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInitialData();
+  }, [receiptDataParam]);
+
+  // Refresh data function
+  const refreshData = useCallback(async () => {
+    setIsRefreshing(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/MFReceipt/GetReceiptDetails`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            CenterID: centerID,
+            receiptDate: date,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setReceiptData(data);
+
+      // Recalculate totals
+      const totals = calculateTotals(data);
+      setPostedAmount(totals.posted);
+      setPendingAmount(totals.pending);
+      setTotalAmount(totals.total);
+    } catch (error) {
+      Alert.alert("Error", "Failed to fetch receipt data. Please try again.");
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [centerID, date]);
+
+  // Cancel receipt function
+  const cancelReceipt = useCallback(
+    async (receiptNo: string, reason: string) => {
+      try {
+        setIsUpdatingPayment(true);
+        const response = await fetch(
+          `${API_BASE_URL}/MFReceipt/ReceiptCancellationRequest`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              receiptNo: receiptNo,
+              cancelReason: reason,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "An error occurred during processing");
+        }
+
+        const responseData = await response.text();
+        Alert.alert(
+          "Success",
+          `Receipt ${responseData} cancellation requested successfully.`
+        );
+
+        // Refresh data after cancellation
+        await refreshData();
+
+        // Reset modal states
+        setPayModalVisible(false);
+        setSelectedReceipt(null);
+        setPayAmount("");
+      } catch (err: any) {
+        Alert.alert("Error", err.message || "An unexpected error occurred");
+        setPayModalVisible(false);
+      } finally {
+        setIsUpdatingPayment(false);
+      }
+    },
+    [refreshData]
+  );
+
+  // Handle pay amount enter
+  const handlePayAmountEnter = useCallback(() => {
+    if (!payAmount.trim()) {
+      Alert.alert("Error", "Please enter a reason for cancellation");
+      return;
+    }
+    if (selectedReceipt) {
+      cancelReceipt(selectedReceipt.ReceiptNo, payAmount);
+    }
+  }, [payAmount, selectedReceipt, cancelReceipt]);
+
+  // Render receipt item
+  const renderReceiptItem = ({ item }: { item: ReceiptItem }) => (
+    <ReceiptItemComponent
+      item={item}
+      onPress={() => {
+        setSelectedReceipt(item);
+        setPayAmount("");
+        setPayModalVisible(true);
+      }}
+    />
+  );
+
+  // Render empty list
+  const renderEmptyList = () => (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyText}>No receipt data available</Text>
+      <TouchableOpacity
+        style={styles.refreshButton}
+        onPress={refreshData}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.refreshButtonText}>Refresh</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container} edges={["left", "right"]}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingContainer}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 20}
+      >
+        {/* Main Content */}
+        <View style={styles.contentContainer}>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#4D90FE" />
+              <Text style={styles.loadingText}>Loading receipts...</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <FontAwesome
+                name="exclamation-circle"
+                size={48}
+                color="#FF3B30"
+              />
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={refreshData}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <FlatList
+              data={receiptData}
+              renderItem={renderReceiptItem}
+              keyExtractor={(item) => item.id.toString()}
+              contentContainerStyle={styles.listContainer}
+              ListEmptyComponent={renderEmptyList}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={refreshData}
+                  colors={["#4D90FE"]}
+                  tintColor="#4D90FE"
+                />
+              }
+            />
+          )}
+        </View>
+
+        {/* Footer with Total Amount */}
+        <View style={styles.footerContainer}>
+          <View style={styles.totalAmountContainer}>
+            <View>
+              <Text style={styles.amountLabel}>Posted:</Text>
+              <Text style={styles.postedAmountValue}>
+                {postedAmount.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </Text>
+            </View>
+
+            <View>
+              <Text style={styles.amountLabel}>Pending:</Text>
+              <Text style={styles.pendingAmountValue}>
+                {pendingAmount.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </Text>
+            </View>
+
+            <View>
+              <Text style={styles.amountLabel}>Total:</Text>
+              <Text style={styles.totalAmountValue}>
+                {totalAmount.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+
+      {/* Payment Modal */}
+      <PayModalComponent
+        isVisible={isPayModalVisible}
+        onClose={() => {
+          if (!isUpdatingPayment) {
+            setPayModalVisible(false);
+            setSelectedReceipt(null);
+            setPayAmount("");
+          }
+        }}
+        selectedReceipt={selectedReceipt}
+        payAmount={payAmount}
+        id={selectedReceipt?.id || 0}
+        setPayAmount={setPayAmount}
+        isUpdatingPayment={isUpdatingPayment}
+        onPayAmountEnter={handlePayAmountEnter}
+      />
+    </SafeAreaView>
+  );
+};
+
+// Recreate ReceiptItemComponent and PayModalComponent as they were in the original code
+const ReceiptItemComponent: React.FC<{
   item: ReceiptItem;
   onPress: () => void;
-}
-
-// Receipt Item Component
-const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
-  item,
-  onPress,
-}) => {
-  // Format date and time from logDate
+}> = ({ item, onPress }) => {
   const logDate = new Date(item.logDate);
   const formattedDate = logDate.toISOString().split("T")[0];
   const formattedTime = logDate.toLocaleTimeString("en-US", {
@@ -64,7 +357,6 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
         <View style={styles.receiptHeaderRight}>
           <Text style={styles.receiptDate}>{formattedDate}</Text>
           <Text style={styles.receiptTime}>{formattedTime}</Text>
-
           <Text style={styles.centerName}>{item.CenterName}</Text>
         </View>
       </View>
@@ -107,7 +399,6 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
           </View>
         </View>
 
-        {/* Cancel Button */}
         <TouchableOpacity
           onPress={onPress}
           style={styles.cancelButtonStyle}
@@ -124,7 +415,7 @@ const ReceiptItemComponent: React.FC<ReceiptItemComponentProps> = ({
   );
 };
 
-interface PayModalComponentProps {
+const PayModalComponent: React.FC<{
   isVisible: boolean;
   onClose: () => void;
   id: number;
@@ -133,12 +424,8 @@ interface PayModalComponentProps {
   setPayAmount: (value: string) => void;
   isUpdatingPayment: boolean;
   onPayAmountEnter: () => void;
-}
-
-// Pay Modal Component
-const PayModalComponent: React.FC<PayModalComponentProps> = ({
+}> = ({
   isVisible,
-  id,
   onClose,
   selectedReceipt,
   payAmount,
@@ -168,9 +455,9 @@ const PayModalComponent: React.FC<PayModalComponentProps> = ({
         <View style={styles.modalBody}>
           <View style={styles.receiptDetails}>
             <Text style={styles.modalReceiptId}>
-              Loan: {selectedReceipt?.LoanNo || ""}
+              {selectedReceipt?.LoanNo || ""}
             </Text>
-            <Text style={styles.modalReceiptId}>ID: {id}</Text>
+
             <Text style={styles.modalCenter_CustName}>
               {selectedReceipt?.CenterName || ""}
             </Text>
@@ -220,306 +507,6 @@ const PayModalComponent: React.FC<PayModalComponentProps> = ({
     </View>
   </Modal>
 );
-const calculateTotals = (data: ReceiptItem[]) => {
-  const postedItems = data.filter((item) => item.Status === "Posted");
-  const pendingItems = data.filter((item) => item.Status === "Pending");
-
-  const postedTotal = postedItems.reduce((sum, item) => sum + item.amount, 0);
-  const pendingTotal = pendingItems.reduce((sum, item) => sum + item.amount, 0);
-  const total = data.reduce((sum, item) => sum + item.amount, 0);
-
-  return {
-    posted: postedTotal, // Now returning number instead of string
-    pending: pendingTotal, // Now returning number instead of string
-    total: postedTotal + pendingTotal,
-  };
-};
-
-const MFReceiptList: React.FC = () => {
-  // Get params from router
-  const params = useLocalSearchParams();
-  const { receiptData: receiptDataParam, CenterID, dtoDate } = params;
-
-  // State variables
-  // Change the state declarations to use numbers
-  const [postedAmount, setPostedAmount] = useState<number>(0);
-  const [pendingAmount, setPendingAmount] = useState<number>(0);
-  const [totalAmount, setTotalAmount] = useState<number>(0);
-
-  const [isPayModalVisible, setPayModalVisible] = useState<boolean>(false);
-  const [selectedReceipt, setSelectedReceipt] = useState<ReceiptItem | null>(
-    null
-  );
-  const [payAmount, setPayAmount] = useState<string>("");
-  const [receiptData, setReceiptData] = useState<ReceiptItem[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isUpdatingPayment, setIsUpdatingPayment] = useState<boolean>(false);
-  const [centerID, setCenterID] = useState<number>(Number(CenterID) || 0);
-  const [date, setDTODate] = useState<string>(String(dtoDate) || "");
-
-  // Update centerID and date when params change
-  useEffect(() => {
-    if (CenterID) setCenterID(Number(CenterID));
-    if (dtoDate) setDTODate(String(dtoDate));
-  }, [CenterID, dtoDate]);
-
-  // Handle initial data fetch
-  useEffect(() => {
-    let isMounted = true;
-
-    const initializeData = async () => {
-      try {
-        if (receiptDataParam) {
-          const parsedData = JSON.parse(receiptDataParam as string);
-          if (isMounted) {
-            setReceiptData(parsedData);
-            const totals = calculateTotals(parsedData);
-            setPostedAmount(totals.posted);
-            setPendingAmount(totals.pending);
-            setTotalAmount(totals.total);
-          }
-        }
-      } catch (error) {
-        if (isMounted) {
-          setError("Failed to parse receipt data. Please try again.");
-          console.error("Failed to parse receipt data:", error);
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    initializeData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [receiptDataParam]);
-
-  const refreshData = useCallback(async () => {
-    setIsRefreshing(true);
-    setError(null);
-
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/MFReceipt/ReceiptCancellationRequest`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            CenterID: centerID,
-            dtoDate: date,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setReceiptData(data);
-      const totals = calculateTotals(data);
-      setPostedAmount(totals.posted);
-      setPendingAmount(totals.pending);
-      setTotalAmount(totals.total);
-    } catch (error) {
-      Alert.alert("Error", "Failed to fetch receipt data. Please try again.");
-      // console.error("Error refreshing data:", error);
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [centerID, date]);
-
-  const cancelReceipt = useCallback(
-    async (receiptNo: string, reason: string) => {
-      try {
-        setIsUpdatingPayment(true);
-        const response = await fetch(
-          `${API_BASE_URL}/MFReceipt/ReceiptCancellationRequest`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              receiptNo: receiptNo,
-              cancelReason: reason,
-            }),
-          }
-        );
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || "An error occurred during processing");
-        }
-
-        const responseData = await response.text();
-        Alert.alert(
-          "Success",
-          `Receipt ${responseData} cancellation requested successfully.`
-        );
-
-        await refreshData();
-        setPayModalVisible(false);
-        setSelectedReceipt(null);
-        setPayAmount("");
-      } catch (err: any) {
-        Alert.alert("Error", err.message || "An unexpected error occurred");
-      } finally {
-        setIsUpdatingPayment(false);
-      }
-    },
-    [refreshData]
-  );
-
-  const handlePayAmountEnter = useCallback(() => {
-    if (!payAmount.trim()) {
-      Alert.alert("Error", "Please enter a reason for cancellation");
-      return;
-    }
-    if (selectedReceipt) {
-      cancelReceipt(selectedReceipt.ReceiptNo, payAmount);
-    }
-  }, [payAmount, selectedReceipt, cancelReceipt]);
-
-  // Replace the formatAmount function with this:
-  const formatAmount = (amount: number | string): string => {
-    // Convert string to number if needed
-    const numAmount =
-      typeof amount === "string" ? parseFloat(amount) || 0 : amount;
-    return numAmount.toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  };
-
-  // Render empty list
-  const renderEmptyList = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>No receipt data available</Text>
-      <TouchableOpacity
-        style={styles.refreshButton}
-        onPress={refreshData}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.refreshButtonText}>Refresh</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  return (
-    <SafeAreaView style={styles.container} edges={["left", "right"]}>
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoidingContainer}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 20}
-      >
-        {/* Main Content */}
-        <View style={styles.contentContainer}>
-          {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#4D90FE" />
-              <Text style={styles.loadingText}>Loading receipts...</Text>
-            </View>
-          ) : error ? (
-            <View style={styles.errorContainer}>
-              <FontAwesome
-                name="exclamation-circle"
-                size={48}
-                color="#FF3B30"
-              />
-              <Text style={styles.errorText}>{error}</Text>
-              <TouchableOpacity
-                style={styles.retryButton}
-                onPress={refreshData}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.retryButtonText}>Retry</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <FlatList
-              data={receiptData}
-              renderItem={({ item }) => (
-                <ReceiptItemComponent
-                  item={item}
-                  onPress={() => {
-                    setSelectedReceipt(item);
-                    setPayAmount("");
-                    setPayModalVisible(true);
-                  }}
-                />
-              )}
-              keyExtractor={(item) => item.id.toString()}
-              contentContainerStyle={styles.listContainer}
-              ListEmptyComponent={renderEmptyList}
-              refreshControl={
-                <RefreshControl
-                  refreshing={isRefreshing}
-                  onRefresh={refreshData}
-                  colors={["#4D90FE"]}
-                  tintColor="#4D90FE"
-                />
-              }
-            />
-          )}
-        </View>
-
-        {/* Footer with Total Amount */}
-        <View style={styles.footerContainer}>
-          <View style={styles.totalAmountContainer}>
-            <View>
-              <Text style={styles.amountLabel}>Posted:</Text>
-              <Text style={styles.postedAmountValue}>
-                {postedAmount.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </Text>
-            </View>
-
-            <View>
-              <Text style={styles.amountLabel}>Pending:</Text>
-              <Text style={styles.pendingAmountValue}>
-                {formatAmount(pendingAmount)}
-              </Text>
-            </View>
-
-            <View>
-              <Text style={styles.amountLabel}>Total:</Text>
-              <Text style={styles.totalAmountValue}>
-                {formatAmount(totalAmount)}
-              </Text>
-            </View>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
-
-      {/* Payment Modal */}
-      <PayModalComponent
-        isVisible={isPayModalVisible}
-        onClose={() => {
-          if (!isUpdatingPayment) {
-            setPayModalVisible(false);
-            setSelectedReceipt(null);
-            setPayAmount("");
-          }
-        }}
-        selectedReceipt={selectedReceipt}
-        payAmount={payAmount}
-        id={selectedReceipt?.id || 0}
-        setPayAmount={setPayAmount}
-        isUpdatingPayment={isUpdatingPayment}
-        onPayAmountEnter={handlePayAmountEnter}
-      />
-    </SafeAreaView>
-  );
-};
 
 const styles = StyleSheet.create({
   container: {

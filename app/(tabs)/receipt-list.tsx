@@ -175,44 +175,87 @@ const MFReceiptList: React.FC = () => {
   const [centerID, setCenterID] = useState(params.CenterID || 0);
   const [groupID, setGroupID] = useState(params.GroupID || "");
 
-  // Update centerID and groupID when params change
+  // Debug logging for incoming parameters
   useEffect(() => {
-    setCenterID(params.CenterID || 0);
-    setGroupID(params.GroupID || "");
-  }, [params.CenterID, params.GroupID]);
-
-  // Fetch data on component mount or when centerID/groupID changes
-  useEffect(() => {
-    if (centerID && groupID) {
-      refreshData();
-    }
-  }, [centerID, groupID]);
-
-  // Handle initial data fetch
-  useEffect(() => {
+    console.log("Incoming Params:", {
+      receiptDataParam: typeof receiptDataParam,
+      branchID,
+      collectDate,
+      userBranchID,
+      CenterID,
+      GroupID,
+    });
+    
+    // Additional debugging for receiptDataParam
     if (receiptDataParam) {
       try {
-        const parsedData = JSON.parse(receiptDataParam as string);
-        setReceiptData(parsedData);
-        setIsLoading(false);
+        const parsed = typeof receiptDataParam === 'string' 
+          ? JSON.parse(receiptDataParam) 
+          : receiptDataParam;
+        console.log("Parsed Receipt Data:", parsed);
       } catch (error) {
-        // console.error("Failed to parse receipt data:", error);
-        // setError("Failed to parse receipt data. Please try again.");
+        console.error("Error parsing receiptDataParam:", error);
+      }
+    }
+  }, [params]);
+
+  // Comprehensive data parsing and loading
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // First, try to parse receiptDataParam if it exists
+        if (receiptDataParam) {
+          console.log("Attempting to parse receiptDataParam");
+          
+          let parsedData: ReceiptItem[] = [];
+          
+          // Handle different possible input types
+          if (typeof receiptDataParam === 'string') {
+            try {
+              parsedData = JSON.parse(receiptDataParam);
+            } catch (parseError) {
+              console.error("JSON parsing error:", parseError);
+            }
+          } else if (Array.isArray(receiptDataParam)) {
+            parsedData = receiptDataParam as ReceiptItem[];
+          }
+
+          // Validate parsed data
+          if (Array.isArray(parsedData) && parsedData.length > 0) {
+            console.log("Successfully parsed receipt data:", parsedData);
+            setReceiptData(parsedData);
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        // If no valid data from params, attempt to fetch from API
+        console.log("No valid receipt data from params, fetching from API");
+        await refreshData();
+      } catch (error) {
+        console.error("Error in data loading:", error);
+        setError("Failed to load receipt data");
         setIsLoading(false);
       }
-    } else {
-      refreshData(); // Fetch data from the API if no params are passed
-    }
-  }, [receiptDataParam]);
+    };
 
-  // Refresh data function
-  const  refreshData = async () => {
-    // setApiStatus("loading");
+    loadData();
+  }, [receiptDataParam, centerID, groupID]);
+
+  // Refresh data function with enhanced error handling
+  const refreshData = async () => {
+    console.log("Refreshing data with:", { centerID, groupID });
+    
     setIsRefreshing(true);
     setIsLoading(true);
     setError(null);
 
     try {
+      // Validate centerID and groupID before API call
+      if (!centerID || !groupID) {
+        throw new Error("Missing centerID or groupID");
+      }
+
       const response = await fetch(`${API_BASE_URL}/MFReceipt/getLoanDetails`, {
         method: "POST",
         headers: {
@@ -229,14 +272,25 @@ const MFReceiptList: React.FC = () => {
       }
 
       const data = await response.json();
-      // console.log(data);
+      
+      console.log("API Response:", data);
+
+      if (!Array.isArray(data)) {
+        throw new Error("Received data is not an array");
+      }
 
       setReceiptData(data);
-      // setApiStatus("success");
     } catch (error) {
-      // setApiStatus("error");
-      setError("Failed to fetch receipt data. Please try again.");
-      Alert.alert("Error", "Failed to fetch receipt data. Please try again.");
+      console.error("Detailed error in refreshData:", error);
+      setError(
+        error instanceof Error 
+          ? error.message 
+          : "Failed to fetch receipt data. Please try again."
+      );
+      Alert.alert(
+        "Error", 
+        "Failed to fetch receipt data. Please check your connection and try again."
+      );
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -251,12 +305,6 @@ const MFReceiptList: React.FC = () => {
       return;
     }
     setIsUpdatingPayment(true);
-    // Validate payAmount
-    const paymentAmount = parseFloat(payAmount);
-    if (isNaN(paymentAmount) || paymentAmount <= 0) {
-      Alert.alert("Invalid Input", "Please enter a valid payment amount.");
-      return;
-    }
 
     try {
       // Update only the payAmount for the selected receipt
@@ -264,7 +312,7 @@ const MFReceiptList: React.FC = () => {
         receipt.loanID === selectedReceipt.loanID
           ? {
               ...receipt,
-              payAmount: paymentAmount, // Update payAmount only
+              payAmount: parseFloat(payAmount), // Update payAmount only
             }
           : receipt
       );
@@ -273,7 +321,6 @@ const MFReceiptList: React.FC = () => {
       setPayModalVisible(false);
       setPayAmount("");
       setSelectedReceipt(null);
-      // Alert.alert("Success", "Payment amount updated successfully.");
     } catch (err) {
       Alert.alert(
         "Error",
@@ -290,9 +337,6 @@ const MFReceiptList: React.FC = () => {
     const numericValue = text.replace(/[^0-9.]/g, "");
     setTotalAmount(numericValue);
   };
-  useEffect(() => {
-    refreshData();
-  }, [centerID, groupID, receiptDataParam]);
 
   // Handle save
   const handleSave = async () => {
@@ -351,7 +395,6 @@ const MFReceiptList: React.FC = () => {
       );
       return;
     }
-    setTotalAmount("");
 
     processPayment(enteredTotal, totalPayAmount, receiptsWithPayments);
   };
@@ -458,7 +501,7 @@ const MFReceiptList: React.FC = () => {
                   }}
                 />
               )}
-              keyExtractor={(item) => item.LoanNo}
+              keyExtractor={(item) => item.LoanNo.toString()}
               contentContainerStyle={[
                 styles.listContainer,
                 { paddingBottom: 80 },
@@ -527,34 +570,13 @@ const MFReceiptList: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F1F", // Fixed typo in color
+    backgroundColor: "#F8F9F", // Fixed typo in color
   },
   keyboardAvoidingContainer: {
     flex: 1,
   },
   contentContainer: {
     flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 4,
-    paddingHorizontal: 14,
-    backgroundColor: "white",
-    borderBottomColor: "#E0E0E0",
-    borderBottomWidth: 1,
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-  },
-  logoutButton: {
-    padding: 8,
   },
   listContainer: {
     padding: 14,
@@ -567,7 +589,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     shadowColor: "black",
     shadowOffset: { width: 1, height: 2 },
-    shadowOpacity: 2,
+    shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 2,
     overflow: "hidden",
@@ -765,31 +787,6 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 14,
     color: "#FF3B30",
-  },
-  totalPayAmountContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-    marginBottom: 10,
-  },
-  totalPayAmountLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#666",
-  },
-  totalPayAmountValue: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#4D90FE",
-  },
-  amountMismatch: {
-    color: "#FF3B30",
-  },
-  amountMatch: {
-    color: "#34C759",
   },
 });
 
