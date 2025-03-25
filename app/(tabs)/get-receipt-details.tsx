@@ -34,7 +34,7 @@ interface Branch {
   BranchID?: string;
 }
 
-export default function MFReceiptDetails() {
+export default function MFGetReceiptDetails() {
   const [loanBranches, setLoanBranches] = useState<DropdownItem[]>([]);
   const [centers, setCenters] = useState<DropdownItem[]>([]);
   const [center, setCenter] = useState("");
@@ -89,7 +89,6 @@ export default function MFReceiptDetails() {
         }));
         setLoanBranches(mappedBranches);
       } catch (error) {
-        console.error("Failed to fetch loan branches:", error);
         Alert.alert(
           "Error",
           "Failed to fetch loan branches. Please try again."
@@ -120,7 +119,6 @@ export default function MFReceiptDetails() {
       setCenterID(centerId);
       setCenters(mappedCenters);
     } catch (error) {
-      console.error("Failed to fetch centers:", error);
       Alert.alert("Error", "Failed to fetch centers. Please try again.");
     }
   };
@@ -174,7 +172,6 @@ export default function MFReceiptDetails() {
     }
     closeDropdown();
   };
- 
 
   const fetchReceiptData = async () => {
     setApiStatus("loading");
@@ -191,11 +188,10 @@ export default function MFReceiptDetails() {
         }
       );
 
-      console.log("object retrieved");
       if (!response.ok)
         throw new Error(`HTTP error! Status: ${response.status}`);
       const data = await response.json();
-      // console.log("Data", data);
+
       setApiStatus("success");
       router.push({
         pathname: "/(tabs)/receipt-details",
@@ -203,12 +199,10 @@ export default function MFReceiptDetails() {
           CenterID: center,
           receiptDate: date.toISOString(), // Convert date to ISO string
           receiptData: JSON.stringify(data),
-
-
         },
       });
     } catch (error) {
-      console.error("Failed to fetch receipt data:", error);
+      Alert.alert("Failed to fetch receipt data.");
       setApiStatus("error");
       Alert.alert("Error", "Failed to fetch receipt data. Please try again.");
     }

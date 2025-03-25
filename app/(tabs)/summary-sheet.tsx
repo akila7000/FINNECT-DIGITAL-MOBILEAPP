@@ -59,11 +59,6 @@ const SummarySheetPage = () => {
         throw new Error("API_BASE_URL is not defined");
       }
 
-      console.log(
-        "Fetching from:",
-        `${API_BASE_URL}/MFReceipt/GetCashierCashSummary`
-      );
-
       const formattedDate = date.toISOString().split("T")[0]; // Format as YYYY-MM-DD
 
       const response = await fetch(
@@ -82,7 +77,7 @@ const SummarySheetPage = () => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("API Error:", errorText);
+        Alert.alert("Server Error");
         throw new Error(errorText || "Failed to fetch data");
       }
 
@@ -131,11 +126,6 @@ const SummarySheetPage = () => {
       { label: "MF Cash In", value: item.MFCashIn, key: "MFCashIn" },
       { label: "GL Cash In", value: item.GLCashIn, key: "GLCashIn" },
       { label: "Cash Bank", value: item.CashBank, key: "CashBank" },
-      {
-        label: "Cash Collection",
-        value: item.CashCollection,
-        key: "CashCollection",
-      },
     ];
 
     // Calculate total cash in hand
@@ -347,7 +337,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   positiveValue: {
-    color: "#27ae60",
+    color: "#F0CBO7",
   },
   totalSection: {
     flexDirection: "row",

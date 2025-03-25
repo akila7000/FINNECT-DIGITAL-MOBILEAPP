@@ -157,7 +157,7 @@ const MFReceiptList: React.FC = () => {
   // Get params from router
   const params = useLocalSearchParams();
   const { receiptData: receiptDataParam } = params;
-  const { branchID, collectDate, userBranchID, CenterID, GroupID } = params;
+  const { branchID, collectDate, userBranchID } = params;
 
   // State variables
   const [totalAmount, setTotalAmount] = useState<string>("0");
@@ -184,9 +184,8 @@ const MFReceiptList: React.FC = () => {
           typeof receiptDataParam === "string"
             ? JSON.parse(receiptDataParam)
             : receiptDataParam;
-        // console.log("Parsed Receipt Data:", parsed);
       } catch (error) {
-        console.error("Error parsing receiptDataParam:", error);
+        Alert.alert("Error parsing receiptDataParam.");
       }
     }
   }, [params]);

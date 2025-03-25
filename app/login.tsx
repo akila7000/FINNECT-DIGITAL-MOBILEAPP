@@ -203,7 +203,7 @@ const Login = () => {
           // Navigate to the protected page after successful login
           router.push("/receipt");
         } else {
-          console.log("Error", response);
+  
           // Handle invalid user data format
           setApiStatus("error");
           setErrorMessage("Invalid Credentials!");
@@ -454,7 +454,7 @@ const Login = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F0F4F3",
+    backgroundColor: "#F0F4F4",
   },
   keyboardAvoidingView: {
     flex: 1,
@@ -469,8 +469,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   logo: {
-  
-    marginBottom:4,
+    marginBottom: 4,
   },
   welcomeText: {
     fontSize: 24,
