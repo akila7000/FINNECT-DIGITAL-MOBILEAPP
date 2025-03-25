@@ -125,7 +125,6 @@ export default function MFReceipt() {
           }));
         setCashierBranches(mappedBranches);
       } catch (error) {
-        console.error("Failed to fetch cashier branches:", error);
         Alert.alert(
           "Error",
           "Failed to fetch cashier branches. Please try again."
@@ -167,7 +166,6 @@ export default function MFReceipt() {
 
         setLoanBranches(mappedBranches);
       } catch (error) {
-        console.error("Failed to fetch loan branches:", error);
         Alert.alert(
           "Error",
           "Failed to fetch loan branches. Please try again."
@@ -205,7 +203,7 @@ export default function MFReceipt() {
       const centerId = mappedCenters.length > 0 ? mappedCenters[0].value : null;
 
       setCenterID(centerId);
-      
+
       setCenters(mappedCenters);
     } catch (error) {
       console.error("Failed to fetch centers:", error);
@@ -242,7 +240,6 @@ export default function MFReceipt() {
       setGrpID(firstGrpID);
       setGroups(mappedGroups);
     } catch (error) {
-      console.error("Failed to fetch groups:", error);
       Alert.alert("Error", "Failed to fetch groups. Please try again.");
     }
   };
@@ -368,7 +365,7 @@ export default function MFReceipt() {
         },
       });
     } catch (error) {
-      console.error("Failed to fetch receipt data:", error);
+      Alert.alert("Failed to fetch receipt data.");
       setApiStatus("error");
       Alert.alert("Error", "Failed to fetch receipt data. Please try again.");
     }

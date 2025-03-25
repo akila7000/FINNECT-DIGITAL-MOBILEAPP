@@ -190,6 +190,8 @@ export default function MFReceiptDetails() {
           }),
         }
       );
+
+      console.log("object retrieved");
       if (!response.ok)
         throw new Error(`HTTP error! Status: ${response.status}`);
       const data = await response.json();
@@ -201,6 +203,8 @@ export default function MFReceiptDetails() {
           CenterID: center,
           receiptDate: date.toISOString(), // Convert date to ISO string
           receiptData: JSON.stringify(data),
+
+
         },
       });
     } catch (error) {

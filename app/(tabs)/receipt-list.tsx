@@ -177,22 +177,14 @@ const MFReceiptList: React.FC = () => {
 
   // Debug logging for incoming parameters
   useEffect(() => {
-    console.log("Incoming Params:", {
-      receiptDataParam: typeof receiptDataParam,
-      branchID,
-      collectDate,
-      userBranchID,
-      CenterID,
-      GroupID,
-    });
-    
     // Additional debugging for receiptDataParam
     if (receiptDataParam) {
       try {
-        const parsed = typeof receiptDataParam === 'string' 
-          ? JSON.parse(receiptDataParam) 
-          : receiptDataParam;
-        console.log("Parsed Receipt Data:", parsed);
+        const parsed =
+          typeof receiptDataParam === "string"
+            ? JSON.parse(receiptDataParam)
+            : receiptDataParam;
+        // console.log("Parsed Receipt Data:", parsed);
       } catch (error) {
         console.error("Error parsing receiptDataParam:", error);
       }
@@ -205,24 +197,22 @@ const MFReceiptList: React.FC = () => {
       try {
         // First, try to parse receiptDataParam if it exists
         if (receiptDataParam) {
-          console.log("Attempting to parse receiptDataParam");
-          
           let parsedData: ReceiptItem[] = [];
-          
+
           // Handle different possible input types
-          if (typeof receiptDataParam === 'string') {
+          if (typeof receiptDataParam === "string") {
             try {
               parsedData = JSON.parse(receiptDataParam);
             } catch (parseError) {
-              console.error("JSON parsing error:", parseError);
+              Alert.alert("Error parsing.");
             }
           } else if (Array.isArray(receiptDataParam)) {
-            parsedData = receiptDataParam as ReceiptItem[];
+            parsedData = receiptDataParam as unknown as ReceiptItem[];
           }
 
           // Validate parsed data
           if (Array.isArray(parsedData) && parsedData.length > 0) {
-            console.log("Successfully parsed receipt data:", parsedData);
+            // console.log("Successfully parsed receipt data:", parsedData);
             setReceiptData(parsedData);
             setIsLoading(false);
             return;
@@ -230,10 +220,10 @@ const MFReceiptList: React.FC = () => {
         }
 
         // If no valid data from params, attempt to fetch from API
-        console.log("No valid receipt data from params, fetching from API");
+        // console.log("No valid receipt data from params, fetching from API");
         await refreshData();
       } catch (error) {
-        console.error("Error in data loading:", error);
+        // console.error("Error in data loading:", error);
         setError("Failed to load receipt data");
         setIsLoading(false);
       }
@@ -244,8 +234,8 @@ const MFReceiptList: React.FC = () => {
 
   // Refresh data function with enhanced error handling
   const refreshData = async () => {
-    console.log("Refreshing data with:", { centerID, groupID });
-    
+    // console.log("Refreshing data with:", { centerID, groupID });
+
     setIsRefreshing(true);
     setIsLoading(true);
     setError(null);
@@ -272,8 +262,8 @@ const MFReceiptList: React.FC = () => {
       }
 
       const data = await response.json();
-      
-      console.log("API Response:", data);
+
+      // console.log("API Response:", data);
 
       if (!Array.isArray(data)) {
         throw new Error("Received data is not an array");
@@ -281,14 +271,14 @@ const MFReceiptList: React.FC = () => {
 
       setReceiptData(data);
     } catch (error) {
-      console.error("Detailed error in refreshData:", error);
+      // console.error("Detailed error in refreshData:", error);
       setError(
-        error instanceof Error 
-          ? error.message 
+        error instanceof Error
+          ? error.message
           : "Failed to fetch receipt data. Please try again."
       );
       Alert.alert(
-        "Error", 
+        "Error",
         "Failed to fetch receipt data. Please check your connection and try again."
       );
     } finally {
@@ -326,7 +316,7 @@ const MFReceiptList: React.FC = () => {
         "Error",
         "Failed to update payment amount. Please try again."
       );
-      console.error("Error updating payment:", err);
+      // console.error("Error updating payment:", err);
     } finally {
       setIsUpdatingPayment(false);
     }
@@ -449,7 +439,7 @@ const MFReceiptList: React.FC = () => {
       refreshData();
     } catch (err: any) {
       Alert.alert("Error", err.message || "An unexpected error occurred");
-      console.error("Error saving payment data:", err);
+      // console.error("Error saving payment data:", err);
     } finally {
       setIsSaving(false);
     }

@@ -36,7 +36,7 @@ type ReceiptItem = {
 const MFReceiptList: React.FC = () => {
   // Get params from router
   const params = useLocalSearchParams();
-  const { receiptData: receiptDataParam, CenterID, dtoDate } = params;
+  const { receiptData: receiptDataParam, CenterID, dtoDate , receiptDate} = params;
 
   // State variables
   const [postedAmount, setPostedAmount] = useState<number>(0);
@@ -56,6 +56,9 @@ const MFReceiptList: React.FC = () => {
   const [centerID, setCenterID] = useState<number>(Number(CenterID) || 0);
   const [date, setDTODate] = useState<string>(String(dtoDate) || "");
 
+  useEffect(() => {
+    console.log("date", receiptDate);
+  });
   // Calculate totals function
   const calculateTotals = (data: ReceiptItem[]) => {
     const postedItems = data.filter((item) => item.Status === "Posted");
@@ -118,7 +121,7 @@ const MFReceiptList: React.FC = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             CenterID: centerID,
-            receiptDate: date,
+            receiptDate: receiptDate,
           }),
         }
       );
