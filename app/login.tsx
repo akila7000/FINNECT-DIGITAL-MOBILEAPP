@@ -177,7 +177,7 @@ const Login = () => {
         if (Array.isArray(data) && data.length > 0) {
           const user = data[0]; // Get the first item in the array
           const fullName = user.FullName; // "Test Login"
-          console.log("User Full Name:", fullName);
+    
           setLoggedUser(fullName);
 
           // Extract the session cookie from the response headers
