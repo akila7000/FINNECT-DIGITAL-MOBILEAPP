@@ -31,10 +31,10 @@ interface MetricItem {
   label: string;
   value: number;
   key: string;
+  color?: string;
 }
 
 const SummarySheetPage = () => {
-  const router = useRouter();
   const [date, setDate] = useState<Date>(new Date());
   const [apiStatus, setApiStatus] = useState<
     "idle" | "loading" | "success" | "error"
@@ -107,25 +107,52 @@ const SummarySheetPage = () => {
     );
   };
 
-  // Format currency values
-
   // Render each branch summary card
   const renderBranchSummary = (item: SummaryItem, index: number) => {
+    // Calculate total cash in
+    const leaseCashIn = item.LeaseCashIn || 0;
+    const mfCashIn = item.MFCashIn || 0;
+    const glCashIn = item.GLCashIn || 0;
+    const openingBalance = item.OpeningBalance || 0;
+
+    // Detailed calculation of total cash in
+    const totalCashIn = leaseCashIn + mfCashIn + glCashIn;
+    const cashInHand = item.CashCollection || 0;
+
     // Key financial metrics to highlight
     const keyMetrics: MetricItem[] = [
       {
         label: "Opening Balance",
-        value: item.OpeningBalance,
+        value: openingBalance,
         key: "OpeningBalance",
       },
-      { label: "Lease Cash In", value: item.LeaseCashIn, key: "LeaseCashIn" },
-      { label: "MF Cash In", value: item.MFCashIn, key: "MFCashIn" },
-      { label: "GL Cash In", value: item.GLCashIn, key: "GLCashIn" },
-      { label: "Cash Bank", value: item.CashBank, key: "CashBank" },
+      {
+        label: "Lease Receipts",
+        value: leaseCashIn,
+        key: "LeaseCashIn",
+      },
+      {
+        label: "MF Receipts",
+        value: mfCashIn,
+        key: "MFCashIn",
+      },
+      {
+        label: "GL Receipts",
+        value: glCashIn,
+        key: "GLCashIn",
+      },
+      {
+        label: "Total Cash In",
+        value: totalCashIn,
+        key: "TotalCashIn",
+        color: "green", // Specifically coloring Total Cash In green
+      },
+      {
+        label: "Cash Bank",
+        value: item.CashBank || 0,
+        key: "CashBank",
+      },
     ];
-
-    // Calculate total cash in hand
-    const cashInHand = item.CashCollection || 0;
 
     return (
       <View style={styles.branchCard} key={`${item.Branch}-${index}`}>
@@ -137,29 +164,30 @@ const SummarySheetPage = () => {
         <View style={styles.metricsContainer}>
           {keyMetrics.map((metric) => (
             <View style={styles.metricItem} key={metric.key}>
-              <Text style={styles.metricLabel}>{metric.label}</Text>
+              <Text
+                style={[
+                  styles.metricLabel,
+                  metric.color && { color: metric.color },
+                ]}
+              >
+                {metric.label}
+              </Text>
               <Text
                 style={[
                   styles.metricValue,
-                  metric.value > 0 ? styles.positiveValue : null,
+                  metric.color && { color: metric.color },
                 ]}
               >
                 {metric.value.toLocaleString()}
               </Text>
             </View>
           ))}
-        </View>
-
-        <View style={styles.totalSection}>
-          <Text style={styles.totalLabel}>Cash In Hand:</Text>
-          <Text
-            style={[
-              styles.totalValue,
-              cashInHand > 0 ? styles.positiveValue : null,
-            ]}
-          >
-            {cashInHand.toLocaleString()}
-          </Text>
+          <View style={styles.metricItem}>
+            <Text style={styles.cashInHandLabel}>Cash In Hand</Text>
+            <Text style={styles.cashInHandValue}>
+              {cashInHand.toLocaleString()}
+            </Text>
+          </View>
         </View>
       </View>
     );
@@ -218,17 +246,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
-  },
-  header: {
-    padding: 16,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
   },
   content: {
     flex: 1,
@@ -323,35 +340,55 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
   },
-  metricLabel: {
-    fontSize: 14,
-    color: "#34495e",
-  },
+
   metricValue: {
     fontSize: 14,
     fontWeight: "500",
     color: "#333",
   },
+  metricLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#333",
+  },
   positiveValue: {
-    color: "#FF9800",
+    color: "#000",
   },
   totalSection: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingTop: 12,
+    paddingVertical: 8,
     borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
-    marginTop: 8,
+    borderTopColor: "#f0f0f0",
+  },
+  totalCashInContainer: {
+    flex: 1,
+    alignItems: "flex-start",
   },
   totalLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#FF9800",
+    fontSize: 14,
+    color: "#000",
   },
-  totalValue: {
+  totalCashInValue: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#2c3e50",
+    color: "green", // Total Cash In in green
+  },
+  cashInHandContainer: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  cashInHandLabel: {
+    fontSize: 16,
+    fontWeight: "700",
+
+    color: "#FFA500",
+  },
+  cashInHandValue: {
+    fontSize: 16,
+    fontWeight: "700",
+
+    color: "#FFA500", // Cash In Hand in yellow/orange
   },
   errorContainer: {
     backgroundColor: "#ffebee",
