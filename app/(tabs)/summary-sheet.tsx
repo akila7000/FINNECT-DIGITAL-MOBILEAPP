@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   positiveValue: {
-    color: "#F0CBO7",
+    color: "#FF9800",
   },
   totalSection: {
     flexDirection: "row",
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   totalLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#2c3e50",
+    color: "#FF9800",
   },
   totalValue: {
     fontSize: 16,
