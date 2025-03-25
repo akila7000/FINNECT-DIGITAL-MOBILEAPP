@@ -206,7 +206,7 @@ export default function MFReceipt() {
 
       setCenters(mappedCenters);
     } catch (error) {
-      console.error("Failed to fetch centers:", error);
+    
       Alert.alert("Error", "Failed to fetch centers. Please try again.");
     }
   };

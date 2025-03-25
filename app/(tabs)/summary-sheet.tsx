@@ -42,10 +42,6 @@ const SummarySheetPage = () => {
   const [summaryData, setSummaryData] = useState<SummaryItem[] | null>(null);
   const [dateError, setDateError] = useState<string>("");
 
-  useEffect(() => {
-    console.log("date", date);
-  }, [date]);
-
   const onDateChange = (event: any, selectedDate: Date | undefined) => {
     const currentDate = selectedDate || date;
     setDate(currentDate);
