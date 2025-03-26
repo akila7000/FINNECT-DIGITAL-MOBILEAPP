@@ -14,13 +14,15 @@
         "image": "./assets/images/splash.png",
         "resizeMode": "contain",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "bundleIdentifier": "com.anonymous.finnectdigitalslug"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.anonymous.finnectdigitalslug"
     },
     "web": {
       "bundler": "metro",
@@ -33,17 +35,25 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/splash.png",
-          "imageWidth": 1242,  // Specify full width of your splash image
-          "imageHeight": 2688, // Specify full height of your splash image
-          "resizeMode": "contain", // or "cover"
+          "imageWidth": 1242,
+          "imageHeight": 2688,
+          "resizeMode": "contain",
           "backgroundColor": "#ffffff",
-          "hideExpoLogoOnSplash": true // This can help prevent additional logos
+          "hideExpoLogoOnSplash": true
         }
       ],
       "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "f428a608-56ef-4ead-be0a-975da796aaa9"
+      }
     }
   }
 }
