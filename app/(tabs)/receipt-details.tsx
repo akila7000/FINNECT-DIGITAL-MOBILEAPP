@@ -173,7 +173,7 @@ const MFReceiptList: React.FC = () => {
         const responseData = await response.text();
         Alert.alert(
           "Success",
-          `Receipt ${responseData} cancellation requested successfully.`
+          `Receipt ${responseData}.`
         );
 
         // Refresh data after cancellation
