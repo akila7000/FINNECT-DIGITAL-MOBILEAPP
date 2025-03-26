@@ -80,7 +80,7 @@ export default function TabLayout() {
           height: Platform.OS === "ios" ? 80 : 90,
        
           paddingBottom: Platform.OS === "ios" ? 40 : 40,
-          paddingTop: 5,
+          paddingTop: 8,
           paddingHorizontal: Platform.OS === "ios" ? 20 : 20,
           backgroundColor: "white",
           justifyContent: "space-between",
