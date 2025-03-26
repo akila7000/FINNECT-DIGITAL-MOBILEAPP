@@ -22,7 +22,9 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.finnectdigitalslug"
+      "package": "com.anonymous.finnectdigitalslug",
+
+      "permissions": ["INTERNET"]
     },
     "web": {
       "bundler": "metro",
