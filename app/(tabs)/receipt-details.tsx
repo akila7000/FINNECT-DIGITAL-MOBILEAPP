@@ -235,7 +235,7 @@ const MFReceiptList: React.FC = () => {
       <KeyboardAvoidingView
         style={styles.keyboardAvoidingContainer}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 20}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 90}
       >
         {/* Main Content */}
         <View style={styles.contentContainer}>
