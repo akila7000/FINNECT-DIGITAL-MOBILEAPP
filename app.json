@@ -11,15 +11,15 @@
     "ios": {
       "supportsTablet": true,
       "splash": {
-        "image": "./assets/images/iphone-splash.png",
+        "image": "./assets/images/splash.png",
         "resizeMode": "contain",
-        "backgroundColor": "#000000"
+        "backgroundColor": "#ffffff"
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#000000"
+        "backgroundColor": "#ffffff"
       }
     },
     "web": {
@@ -32,10 +32,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-preview.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "image": "./assets/images/splash.png",
+          "imageWidth": 1242,  // Specify full width of your splash image
+          "imageHeight": 2688, // Specify full height of your splash image
+          "resizeMode": "contain", // or "cover"
+          "backgroundColor": "#ffffff",
+          "hideExpoLogoOnSplash": true // This can help prevent additional logos
         }
       ],
       "expo-secure-store"

@@ -3,10 +3,9 @@
 // This file defines the navigation stack for the app
 // and manages screen options like header visibility and navigation behavior.
 
-
 import { Text } from "react-native";
-import { Stack } from "expo-router";
-
+import { SplashScreen, Stack } from "expo-router";
+SplashScreen;
 export default function RootLayout() {
   return (
     <Stack
@@ -14,12 +13,12 @@ export default function RootLayout() {
         headerBackTitle: " ", // This will hide the "index" text but keep the back button
       }}
     >
-        {/* Hide the header for the "index" screen */}
+      {/* Hide the header for the "index" screen */}
       <Stack.Screen name="index" options={{ headerShown: false }} />
       {/* <Stack.Screen name="" options={{ headerShown: false }} /> */}
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
-       {/* Login Screen Configuration */}
+      {/* Login Screen Configuration */}
       <Stack.Screen
         name="login"
         options={{
@@ -29,6 +28,6 @@ export default function RootLayout() {
           headerBackButtonDisplayMode: "generic",
         }}
       />
-     
     </Stack>
-  );}
+  );
+}
