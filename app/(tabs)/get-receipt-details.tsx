@@ -526,6 +526,10 @@ const styles = StyleSheet.create({
   datePickerContainer: {
     width: "100%",
     borderWidth: 1,
+   
+    paddingLeft: 10,
+    paddingRight: 16,
+    paddingVertical: 12,
     borderRadius: 8,
     borderColor: "#D1D5DB",
     backgroundColor: "#FFFFFF",

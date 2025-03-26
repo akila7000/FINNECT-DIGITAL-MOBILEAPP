@@ -12,7 +12,7 @@ import {
   Platform,
   TextInput
 } from "react-native";
-import { useRouter } from "expo-router";
+
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 16,
     fontWeight: "500",
-    marginBottom: 8,
+    marginBottom: 10,
     color: "#333",
   },
   datePickerContainer: {
@@ -276,6 +276,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
     padding: 4,
+    width: "100%",
+
+
+    paddingLeft: 10,
+    paddingRight: 16,
+    paddingVertical: 12,
+
   },
   datePicker: {
     width: "100%",
@@ -388,7 +395,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "space-between",
   },
- 
+
   cashInHandLabel: {
     fontSize: 16,
     fontWeight: "700",
