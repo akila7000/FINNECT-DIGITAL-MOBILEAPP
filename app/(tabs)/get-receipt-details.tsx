@@ -261,13 +261,7 @@ export default function MFGetReceiptDetails() {
         <View
           style={[styles.datePickerContainer, error ? styles.errorField : null]}
         >
-          <DateTimePicker
-            style={styles.datePicker}
-            value={date}
-            mode="date"
-            display="default"
-            onChange={onDateChange}
-          />
+         
         </View>
         {error && <Text style={styles.errorText}>{error}</Text>}
       </View>

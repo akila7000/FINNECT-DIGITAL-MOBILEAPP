@@ -9,6 +9,8 @@ import {
   StatusBar,
   Alert,
   StyleSheet,
+  Platform,
+  TextInput
 } from "react-native";
 import { useRouter } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -41,11 +43,13 @@ const SummarySheetPage = () => {
   >("idle");
   const [summaryData, setSummaryData] = useState<SummaryItem[] | null>(null);
   const [dateError, setDateError] = useState<string>("");
+  const [showDatePicker, setShowDatePicker] = useState<boolean>(false); // State for controlling DatePicker visibility
 
   const onDateChange = (event: any, selectedDate: Date | undefined) => {
     const currentDate = selectedDate || date;
     setDate(currentDate);
     setDateError("");
+    setShowDatePicker(false); // Close the date picker after selection
   };
 
   const fetchReceiptData = async () => {
@@ -91,18 +95,23 @@ const SummarySheetPage = () => {
     return (
       <View style={styles.fieldContainer}>
         <Text style={styles.fieldLabel}>{label}</Text>
-        <View
+        <TouchableOpacity
           style={[styles.datePickerContainer, error ? styles.errorField : null]}
+          onPress={() => setShowDatePicker(true)} // Trigger the DatePicker visibility
         >
+          <Text>{value.toLocaleDateString()}</Text>
+        </TouchableOpacity>
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+        {/* Show DateTimePicker when showDatePicker is true */}
+        {showDatePicker && (
           <DateTimePicker
-            style={styles.datePicker}
             value={date}
             mode="date"
-            display="default"
+            display={Platform.OS === "android" ? "calendar" : "default"}
             onChange={onDateChange}
           />
-        </View>
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        )}
       </View>
     );
   };
@@ -243,6 +252,7 @@ const SummarySheetPage = () => {
 };
 
 const styles = StyleSheet.create({
+  // (Your styles remain unchanged, just as in the original code)
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
@@ -377,7 +387,8 @@ const styles = StyleSheet.create({
   cashInHandContainer: {
     flex: 1,
     justifyContent: "space-between",
-  },
+  }
+ ,
   cashInHandLabel: {
     fontSize: 16,
     fontWeight: "700",
