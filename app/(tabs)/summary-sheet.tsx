@@ -387,8 +387,8 @@ const styles = StyleSheet.create({
   cashInHandContainer: {
     flex: 1,
     justifyContent: "space-between",
-  }
- ,
+  },
+ 
   cashInHandLabel: {
     fontSize: 16,
     fontWeight: "700",

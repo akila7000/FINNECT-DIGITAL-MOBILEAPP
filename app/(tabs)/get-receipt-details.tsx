@@ -20,7 +20,6 @@ import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from "@react-native-community/datetimepicker";
-
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 interface DropdownItem {
@@ -35,11 +34,13 @@ interface Branch {
 }
 
 export default function MFGetReceiptDetails() {
+  const [date, setDate] = useState<Date>(new Date());
   const [loanBranches, setLoanBranches] = useState<DropdownItem[]>([]);
   const [centers, setCenters] = useState<DropdownItem[]>([]);
   const [center, setCenter] = useState("");
-  const [date, setDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dateError, setDateError] = useState<string>("");
+  const [showDatePicker, setShowDatePicker] = useState<boolean>(false); // State for controlling DatePicker visibility
+
   const [userId, setUserId] = useState("");
   const [errors, setErrors] = useState<{ center?: string; date?: string }>({});
   const [apiStatus, setApiStatus] = useState("idle");
@@ -49,6 +50,7 @@ export default function MFGetReceiptDetails() {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [dropdownSearch, setDropdownSearch] = useState("");
   const [centerId, setCenterID] = useState<string | null>(null);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -62,12 +64,13 @@ export default function MFGetReceiptDetails() {
     checkAuth();
   }, []);
 
-  const onDateChange = (event: any, selectedDate?: Date) => {
+  const onDateChange = (event: any, selectedDate: Date | undefined) => {
     const currentDate = selectedDate || date;
-    setShowDatePicker(Platform.OS === "ios");
     setDate(currentDate);
-    if (errors.date) setErrors({ ...errors, date: undefined });
+    setDateError("");
+    setShowDatePicker(false); // Close the date picker after selection
   };
+
 
   useEffect(() => {
     const fetchLoanBranches = async () => {
@@ -253,17 +256,27 @@ export default function MFGetReceiptDetails() {
       </View>
     );
   };
-
-  const renderDateField = (label: string, value: Date, error?: string) => {
+  const renderDateField = (label: string, value: Date, error: string) => {
     return (
       <View style={styles.fieldContainer}>
         <Text style={styles.fieldLabel}>{label}</Text>
-        <View
+        <TouchableOpacity
           style={[styles.datePickerContainer, error ? styles.errorField : null]}
+          onPress={() => setShowDatePicker(true)} // Trigger the DatePicker visibility
         >
-         
-        </View>
-        {error && <Text style={styles.errorText}>{error}</Text>}
+          <Text>{value.toLocaleDateString()}</Text>
+        </TouchableOpacity>
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+        {/* Show DateTimePicker when showDatePicker is true */}
+        {showDatePicker && (
+          <DateTimePicker
+            value={date}
+            mode="date"
+            display={Platform.OS === "android" ? "calendar" : "default"}
+            onChange={onDateChange}
+          />
+        )}
       </View>
     );
   };
@@ -300,7 +313,7 @@ export default function MFGetReceiptDetails() {
                 errors.center
               )}
 
-              {renderDateField("Select Collection Date", date, errors.date)}
+              {renderDateField("Select Date", date, dateError)}
 
               <TouchableOpacity
                 onPress={handleSubmit}
