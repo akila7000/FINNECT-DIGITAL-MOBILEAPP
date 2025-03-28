@@ -175,37 +175,29 @@ const MFReceiptList: React.FC = () => {
   const [centerID, setCenterID] = useState(params.CenterID);
   const [groupID, setGroupID] = useState(params.GroupID);
 
-  // Debug logging for incoming parameters
-
-  console.log(centerID);
-  useEffect(() => {
-    // Additional debugging for receiptDataParam
-    if (receiptDataParam) {
-      try {
-        const parsed =
-          typeof receiptDataParam === "string"
-            ? JSON.parse(receiptDataParam)
-            : receiptDataParam;
-      } catch (error) {
-        Alert.alert("Error parsing receiptDataParam.");
-      }
-    }
-  }, [params]);
-
-  // Comprehensive data parsing and loading
+  // Enhanced data loading effect
   useEffect(() => {
     const loadData = async () => {
+      // Reset loading and error states
+      setIsLoading(true);
+      setError(null);
+
       try {
-        // First, try to parse receiptDataParam if it exists
+        // Check if centerID or groupID have changed
+        if (params.CenterID !== centerID || params.GroupID !== groupID) {
+          setCenterID(params.CenterID);
+          setGroupID(params.GroupID);
+        }
+
+        // Attempt to parse receipt data from params
         if (receiptDataParam) {
           let parsedData: ReceiptItem[] = [];
 
-          // Handle different possible input types
           if (typeof receiptDataParam === "string") {
             try {
               parsedData = JSON.parse(receiptDataParam);
             } catch (parseError) {
-              Alert.alert("Error parsing.");
+              throw new Error("Failed to parse receipt data");
             }
           } else if (Array.isArray(receiptDataParam)) {
             parsedData = receiptDataParam as unknown as ReceiptItem[];
@@ -213,38 +205,33 @@ const MFReceiptList: React.FC = () => {
 
           // Validate parsed data
           if (Array.isArray(parsedData) && parsedData.length > 0) {
-            // console.log("Successfully parsed receipt data:", parsedData);
             setReceiptData(parsedData);
             setIsLoading(false);
             return;
           }
         }
 
-        // If no valid data from params, attempt to fetch from API
-        // console.log("No valid receipt data from params, fetching from API");
+        // If no valid data from params, fetch from API
         await refreshData();
       } catch (error) {
-        // console.error("Error in data loading:", error);
-        setError("Failed to load receipt data");
-        setIsLoading(false);
+        handleLoadError(error);
       }
     };
 
     loadData();
-  }, [receiptDataParam, centerID, groupID]);
+  }, [params.CenterID, params.GroupID, receiptDataParam]);
 
-  useEffect(() => {
-    setCenterID(params.CenterID);
-    setGroupID(params.GroupID);
-    console.log(centerID, "Center", groupID);
+  // Error handling function
+  const handleLoadError = (error: any) => {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to load receipt data";
 
-    // refreshData();
-  });
+    setError(errorMessage);
+    setIsLoading(false);
+  };
 
-  // Refresh data function with enhanced error handling
+  // Comprehensive refresh data function
   const refreshData = async () => {
-    // console.log("Refreshing data with:", { centerID, groupID });
-
     setIsRefreshing(true);
     setIsLoading(true);
     setError(null);
@@ -252,7 +239,7 @@ const MFReceiptList: React.FC = () => {
     try {
       // Validate centerID and groupID before API call
       if (!centerID || !groupID) {
-        throw new Error("Missing centerID or groupID");
+        throw new Error("Missing CenterID or  GroupID");
       }
 
       const response = await fetch(`${API_BASE_URL}/MFReceipt/getLoanDetails`, {
@@ -272,26 +259,15 @@ const MFReceiptList: React.FC = () => {
 
       const data = await response.json();
 
-      // console.log("API Response:", data);
-
       if (!Array.isArray(data)) {
         throw new Error("Received data is not an array");
       }
 
       setReceiptData(data);
-    } catch (error) {
-      // console.error("Detailed error in refreshData:", error);
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Failed to fetch receipt data. Please try again."
-      );
-      Alert.alert(
-        "Error",
-        "Failed to fetch receipt data. Please check your connection and try again."
-      );
-    } finally {
       setIsLoading(false);
+    } catch (error) {
+      handleLoadError(error);
+    } finally {
       setIsRefreshing(false);
     }
   };
@@ -325,7 +301,6 @@ const MFReceiptList: React.FC = () => {
         "Error",
         "Failed to update payment amount. Please try again."
       );
-      // console.error("Error updating payment:", err);
     } finally {
       setIsUpdatingPayment(false);
     }
@@ -356,39 +331,23 @@ const MFReceiptList: React.FC = () => {
     const enteredTotal = parseFloat(totalAmount);
 
     if (receiptsWithPayments.length === 0) {
-      Alert.alert(
-        "No Payments",
-        "You haven't entered any payment amounts. Would you like to proceed anyway?",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Proceed",
-            onPress: () =>
-              processPayment(
-                enteredTotal,
-                totalPayAmount,
-                receiptsWithPayments
-              ),
-          },
-        ]
-      );
+      Alert.alert("No Payments", "You haven't entered any payment amounts.", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Retry",
+        },
+      ]);
       return;
     }
 
     if (totalPayAmount !== enteredTotal) {
       Alert.alert(
         "Amount Mismatch",
-        `The sum of payment amounts (${totalPayAmount}) doesn't match the entered total amount (${enteredTotal}). Would you like to proceed anyway?`,
+        `The sum of payment amounts (${totalPayAmount}) doesn't match the entered total amount (${enteredTotal}).`,
         [
           { text: "Cancel", style: "cancel" },
           {
-            text: "Proceed",
-            onPress: () =>
-              processPayment(
-                enteredTotal,
-                totalPayAmount,
-                receiptsWithPayments
-              ),
+            text: "Retry",
           },
         ]
       );
@@ -448,7 +407,6 @@ const MFReceiptList: React.FC = () => {
       refreshData();
     } catch (err: any) {
       Alert.alert("Error", err.message || "An unexpected error occurred");
-      // console.error("Error saving payment data:", err);
     } finally {
       setIsSaving(false);
     }
@@ -457,9 +415,70 @@ const MFReceiptList: React.FC = () => {
   // Render empty list
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>No receipt data available.</Text>
+      <Text style={styles.emptyText}>No receipt data available</Text>
+      <TouchableOpacity
+        style={styles.refreshButton}
+        onPress={refreshData}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.refreshButtonText}>Refresh</Text>
+      </TouchableOpacity>
     </View>
   );
+
+  // Render content with improved error handling
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#4D90FE" />
+          <Text style={styles.loadingText}>Loading receipts...</Text>
+        </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No receipt data available</Text>
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={refreshData}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.refreshButtonText}>Refresh</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        data={receiptData}
+        renderItem={({ item }) => (
+          <ReceiptItemComponent
+            item={item}
+            onPress={() => {
+              setSelectedReceipt(item);
+              setPayAmount(item.payAmount ? item.payAmount.toString() : "");
+              setPayModalVisible(true);
+            }}
+          />
+        )}
+        keyExtractor={(item) => item.LoanNo.toString()}
+        contentContainerStyle={[styles.listContainer, { paddingBottom: 80 }]}
+        ListEmptyComponent={renderEmptyList}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={refreshData}
+            colors={["#4D90FE"]}
+            tintColor="#4D90FE"
+          />
+        }
+      />
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["left", "right"]}>
@@ -468,55 +487,7 @@ const MFReceiptList: React.FC = () => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 20}
       >
-        <View style={styles.contentContainer}>
-          {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#4D90FE" />
-              <Text style={styles.loadingText}>Loading receipts...</Text>
-            </View>
-          ) : error ? (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error}</Text>
-              <TouchableOpacity
-                style={styles.retryButton}
-                onPress={refreshData}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.retryButtonText}>Retry</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <FlatList
-              data={receiptData}
-              renderItem={({ item }) => (
-                <ReceiptItemComponent
-                  item={item}
-                  onPress={() => {
-                    setSelectedReceipt(item);
-                    setPayAmount(
-                      item.payAmount ? item.payAmount.toString() : ""
-                    );
-                    setPayModalVisible(true);
-                  }}
-                />
-              )}
-              keyExtractor={(item) => item.LoanNo.toString()}
-              contentContainerStyle={[
-                styles.listContainer,
-                { paddingBottom: 80 },
-              ]}
-              ListEmptyComponent={renderEmptyList}
-              refreshControl={
-                <RefreshControl
-                  refreshing={isRefreshing}
-                  onRefresh={refreshData}
-                  colors={["#4D90FE"]}
-                  tintColor="#4D90FE"
-                />
-              }
-            />
-          )}
-        </View>
+        <View style={styles.contentContainer}>{renderContent()}</View>
 
         <View style={styles.footerContainer}>
           <View style={styles.totalAmountContainer}>
@@ -623,6 +594,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
   },
+
+  refreshButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: "#4D90FE",
+    borderRadius: 8,
+  },
+  refreshButtonText: {
+    fontSize: 14,
+    color: "white",
+    fontWeight: "500",
+  },
   rentalAmountValue: {
     fontSize: 14,
     fontWeight: "600",
@@ -645,14 +628,15 @@ const styles = StyleSheet.create({
     color: "#4D90FE",
   },
   emptyContainer: {
-    flex: 1,
+    padding: 40,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 40,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#666",
+    marginTop: 16,
+    marginBottom: 16,
   },
   loadingContainer: {
     flex: 1,
