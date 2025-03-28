@@ -255,7 +255,7 @@ const Login = () => {
           "Please check your internet connection and try again."
         );
       } else {
-        setErrorMessage("An unexpected error occurred. Please try again!");
+        setErrorMessage("Your username and password is incorrect. Please try again!");
         Alert.alert("Error", "An unexpected error occurred. Please try again.");
       }
     } finally {
