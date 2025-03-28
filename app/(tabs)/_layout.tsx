@@ -52,7 +52,6 @@ export default function TabLayout() {
             // Redirect to the home screen
             router.replace("/");
           } catch (error) {
-            console.error("Logout error:", error);
             Alert.alert("Error", "Failed to logout. Please try again.");
           }
         },

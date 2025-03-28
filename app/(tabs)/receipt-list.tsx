@@ -172,10 +172,12 @@ const MFReceiptList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isUpdatingPayment, setIsUpdatingPayment] = useState<boolean>(false);
-  const [centerID, setCenterID] = useState(params.CenterID || 0);
-  const [groupID, setGroupID] = useState(params.GroupID || "");
+  const [centerID, setCenterID] = useState(params.CenterID);
+  const [groupID, setGroupID] = useState(params.GroupID);
 
   // Debug logging for incoming parameters
+
+  console.log(centerID);
   useEffect(() => {
     // Additional debugging for receiptDataParam
     if (receiptDataParam) {
@@ -230,6 +232,14 @@ const MFReceiptList: React.FC = () => {
 
     loadData();
   }, [receiptDataParam, centerID, groupID]);
+
+  useEffect(() => {
+    setCenterID(params.CenterID);
+    setGroupID(params.GroupID);
+    console.log(centerID, "Center", groupID);
+
+    // refreshData();
+  });
 
   // Refresh data function with enhanced error handling
   const refreshData = async () => {
