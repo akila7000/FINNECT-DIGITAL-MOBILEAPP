@@ -177,7 +177,7 @@ const Login = () => {
         if (Array.isArray(data) && data.length > 0) {
           const user = data[0]; // Get the first item in the array
           const fullName = user.FullName; // "Test Login"
-    
+
           setLoggedUser(fullName);
 
           // Extract the session cookie from the response headers
@@ -203,7 +203,6 @@ const Login = () => {
           // Navigate to the protected page after successful login
           router.push("/receipt");
         } else {
-  
           // Handle invalid user data format
           setApiStatus("error");
           setErrorMessage("Invalid Credentials!");
@@ -255,8 +254,13 @@ const Login = () => {
           "Please check your internet connection and try again."
         );
       } else {
-        setErrorMessage("Your username and password is incorrect. Please try again!");
-        Alert.alert("Error", "An unexpected error occurred. Please try again.");
+        setErrorMessage(
+          "Your username and password is incorrect. Please try again!"
+        );
+        Alert.alert(
+          "Error",
+          "Your username and password is incorrect. Please try again!"
+        );
       }
     } finally {
       // Always clean up loading state
