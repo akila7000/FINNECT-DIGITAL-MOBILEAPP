@@ -144,130 +144,128 @@ const Login = () => {
 
   // Handle login with proper API integration
   const handleLogin = async () => {
-    // Reset previous errors
+    // Reset previous state
     setErrorMessage("");
+    setApiStatus("loading");
 
-    // Validate inputs
+    // Input validation early return
     if (!validateInputs()) {
+      setApiStatus("idle");
       return;
     }
 
     try {
-      // Set loading state
-      setApiStatus("loading");
-
-      // Create an AbortController for timeout handling
+      // Prepare login request with timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
-        credentials: "include", // Ensures cookies are included (only works with fetch in browsers)
-        signal: controller.signal, // Attach the AbortController signal
+        credentials: "include",
+        signal: controller.signal,
       });
 
-      clearTimeout(timeoutId); // Clear timeout after response is received
+      // Clear timeout
+      clearTimeout(timeoutId);
 
-      const data = await response.json(); // Parse response after clearing timeout
-
-      if (response.ok) {
-        // Check if the server returned valid user data
-        if (Array.isArray(data) && data.length > 0) {
-          const user = data[0]; // Get the first item in the array
-          const fullName = user.FullName; // "Test Login"
-
-          setLoggedUser(fullName);
-
-          // Extract the session cookie from the response headers
-          const headers = response.headers;
-          const setCookie = headers.get("set-cookie"); // Extract the session cookie
-
-          if (setCookie) {
-            // Store the session cookie in AsyncStorage
-            await AsyncStorage.setItem("sessionCookie", setCookie);
-          }
-          // Also store the username in AsyncStorage for persistence
-          await AsyncStorage.setItem("userData", fullName);
-        }
-
-        if (data) {
-          // Store user session
-          await AsyncStorage.setItem("userData", JSON.stringify(data));
-
-          // Update status
-          setApiStatus("success");
-          // Clear any existing errors
-          setErrorMessage("");
-          // Navigate to the protected page after successful login
-          router.push("/receipt");
-        } else {
-          // Handle invalid user data format
-          setApiStatus("error");
-          setErrorMessage("Invalid Credentials!");
-          Alert.alert("Login Failed", "Invalid Credentials!");
-        }
-      } else {
-        // Handle different error status codes
-        setApiStatus("error");
-        if (response.status === 401) {
-          setErrorMessage("Invalid username or password");
-          Alert.alert("Login Failed", "Invalid username or password");
-        } else if (response.status === 403) {
-          setErrorMessage("Your account is locked. Please contact support.");
-          Alert.alert(
-            "Account Locked",
-            "Your account is locked. Please contact support."
-          );
-        } else if (response.status >= 500) {
-          setErrorMessage("Server error. Please try again later.");
-          Alert.alert(
-            "Server Error",
-            "Server is currently unavailable. Please try again later."
-          );
-        } else {
-          // Generic error message for other status codes
-          setErrorMessage(data?.message || "Login failed");
-          Alert.alert("Login Failed", data?.message || "Something went wrong");
-        }
+      // Handle non-successful responses
+      if (!response.ok) {
+        await handleErrorResponse(response);
+        return;
       }
-    } catch (error: any) {
-      // Set error stte
-      setApiStatus("error");
 
-      // Handle timeout or network errors
-      if (error.name === "AbortError") {
-        setErrorMessage(
-          "Request timed out. Please check your internet connection."
-        );
-        Alert.alert(
-          "Timeout",
-          "The request took too long. Please check your internet connection and try again."
-        );
-      } else if (error.message.includes("Network request failed")) {
-        setErrorMessage(
-          "Network error. Please check your internet connection."
-        );
-        Alert.alert(
-          "Network Error",
-          "Please check your internet connection and try again."
-        );
-      } else {
-        setErrorMessage(
-          "Your username and password is incorrect. Please try again!"
-        );
-        Alert.alert(
-          "Error",
-          "Your username and password is incorrect. Please try again!"
-        );
-      }
+      // Parse response
+      const responseText = await response.text();
+      console.log(responseText, "responseText");
+
+      // Robust JSON parsing
+      const data = JSON.parse(responseText);
+
+      // Process successful login
+      await processSuccessfulLogin(data, response);
+    } catch (error) {
+      // Handle different types of errors
+      handleLoginError(error);
     } finally {
-      // Always clean up loading state
+      // Ensure loading state is reset
       if (apiStatus === "loading") {
         setApiStatus("idle");
       }
     }
+  };
+
+  // Handle error responses from the server
+  const handleErrorResponse = async (response: Response) => {
+    setApiStatus("error");
+    try {
+      const errorText = await response.text();
+      setErrorMessage(errorText);
+      Alert.alert("Login Failed", errorText);
+    } catch (parseError) {
+      const fallbackErrorMsg = "An unexpected error occurred during processing";
+      setErrorMessage(fallbackErrorMsg);
+      Alert.alert("Error", fallbackErrorMsg);
+    }
+  };
+  // Process successful login data
+  const processSuccessfulLogin = async (data: any, response: Response) => {
+    // Validate user data
+    if (Array.isArray(data) && data.length > 0) {
+      const user = data[0];
+      const fullName = user.FullName;
+
+      // Store user information
+      setLoggedUser(fullName);
+      await storeUserData(fullName, data, response);
+
+      // Navigate to receipt page
+      setApiStatus("success");
+      setErrorMessage("");
+      router.push("/receipt");
+    } else {
+      // Handle invalid user data
+      setApiStatus("error");
+      const errorMsg = data?.message || "Invalid Credentials!";
+      setErrorMessage(errorMsg);
+      Alert.alert("Login Failed", errorMsg);
+    }
+  };
+
+  // Store user-related data
+  const storeUserData = async (
+    fullName: string,
+    data: any,
+    response: Response
+  ) => {
+    // Store session cookie if available
+    const setCookie = response.headers.get("set-cookie");
+    if (setCookie) {
+      await AsyncStorage.setItem("sessionCookie", setCookie);
+    }
+
+    // Store user data
+    await AsyncStorage.setItem("userData", fullName);
+    await AsyncStorage.setItem("userData", JSON.stringify(data));
+  };
+
+  // Handle different types of login errors
+  const handleLoginError = (error: any) => {
+    setApiStatus("error");
+
+    let errorMsg = "An unexpected error occurred. Please try again.";
+
+    if (error.name === "AbortError") {
+      errorMsg = "Request timed out. Please check your internet connection.";
+    } else if (error.message.includes("Network request failed")) {
+      errorMsg = "Network error. Please check your internet connection.";
+    } else if (error.message) {
+      errorMsg = error.message;
+    }
+
+    setErrorMessage(errorMsg);
+    Alert.alert("Error", errorMsg);
   };
   // Handle retry when network is unavailable
   const handleRetry = () => {
@@ -285,11 +283,11 @@ const Login = () => {
           text: "Cancel",
           style: "cancel",
         },
-        {
-          text: "Submit",
-          onPress: () =>
-            Alert.alert("Success", "Password reset link sent to your email!"),
-        },
+        // {
+        //   text: "Submit",
+        //   onPress: () =>
+        //     Alert.alert("Success", "Password reset link sent to your email!"),
+        // },
       ]
     );
   };
