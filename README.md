@@ -48,3 +48,23 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+
+# //local build
+# cd android
+# ./gradlew assembleRelease
+
+# // Local Development Build
+# eas build -p android --profile development
+# eas build -p ios --profile development
+
+# //expo build
+# npm install -g eas-cli
+# eas login
+# eas build:configure
+# eas build -p android
+# eas build -p ios
+
+# //expo Preview Build
+# eas build -p android --profile preview
+# eas build -p ios --profile preview
