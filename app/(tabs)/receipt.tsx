@@ -361,7 +361,7 @@ export default function MFReceipt() {
           branchID: loanBranchId,
           collectDate: new Date().toISOString(),
           userBranchID: cashierBranchId,
-          // userId: userId,
+      
         },
       });
     } catch (error) {
