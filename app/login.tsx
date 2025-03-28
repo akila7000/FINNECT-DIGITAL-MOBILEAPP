@@ -178,7 +178,6 @@ const Login = () => {
 
       // Parse response
       const responseText = await response.text();
-      console.log(responseText, "responseText");
 
       // Robust JSON parsing
       const data = JSON.parse(responseText);
