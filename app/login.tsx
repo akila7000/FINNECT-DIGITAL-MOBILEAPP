@@ -195,19 +195,34 @@ const Login = () => {
     }
   };
 
-  // Handle error responses from the server
+  // // Handle error responses from the server
+  // const handleErrorResponse = async (response: Response) => {
+  //   setApiStatus("error");
+  //   try {
+  //     const errorText = await response.text();
+  //     setErrorMessage(errorText);
+  //     Alert.alert("Login Failed", errorText);
+  //   } catch (parseError) {
+  //     const fallbackErrorMsg = "An unexpected error occurred during processing";
+  //     setErrorMessage(fallbackErrorMsg);
+  //     Alert.alert("Error", fallbackErrorMsg);
+  //   }
+  // };
+
   const handleErrorResponse = async (response: Response) => {
     setApiStatus("error");
     try {
-      const errorText = await response.text();
-      setErrorMessage(errorText);
-      Alert.alert("Login Failed", errorText);
+      const errorData = await response.json();
+      const errorMsg = errorData.message || "An error occurred during login";
+      setErrorMessage(errorMsg);
+      Alert.alert("Login Failed", errorMsg);
     } catch (parseError) {
       const fallbackErrorMsg = "An unexpected error occurred during processing";
       setErrorMessage(fallbackErrorMsg);
       Alert.alert("Error", fallbackErrorMsg);
     }
   };
+
   // Process successful login data
   const processSuccessfulLogin = async (data: any, response: Response) => {
     // Validate user data
