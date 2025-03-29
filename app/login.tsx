@@ -211,8 +211,8 @@ const Login = () => {
   // Process successful login data
   const processSuccessfulLogin = async (data: any, response: Response) => {
     // Validate user data
-    if (Array.isArray(data) && data.length > 0) {
-      const user = data[0];
+    if (Array.isArray(data.user) && data.user.length > 0) {
+      const user = data.user[0];
       const fullName = user.FullName;
 
       // Store user information
